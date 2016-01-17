@@ -1,0 +1,28 @@
+# object files
+*.o
+*.lo
+*.slo
+*.obj
+
+# precompiled headers
+*.gch
+*.pch
+
+# dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# static libraries
+*.a
+*.la
+*.lai
+*.lib
+
+# executables
+*.app
+*.exe
+*.out
+
+# cmake
+build
