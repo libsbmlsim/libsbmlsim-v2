@@ -36,3 +36,8 @@ find_library(LIBBZIP2_LIBRARY
 
 set(LIBSBML_LIBRARIES ${LIBSBML_LIBRARY} ${LIBBZIP2_LIBRARY} )
 set(LIBSBML_INCLUDE_DIRS ${LIBSBML_INCLUDE_DIR} )
+
+include(FindPackageHandleStandardArgs)
+# handle the QUIETLY and REQUIRED arguments and set LIBSBML_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args(LIBSBML DEFAULT_MSG LIBSBML_LIBRARY LIBSBML_INCLUDE_DIR)
