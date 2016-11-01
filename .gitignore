@@ -26,3 +26,6 @@
 
 # cmake
 build
+
+# IntelliJ
+.idea/
