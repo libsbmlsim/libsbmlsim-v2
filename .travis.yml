@@ -7,6 +7,10 @@ compiler:
   - clang++
   - g++
 
+before_install:
+  - sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ xenial main universe"
+  - sudo apt-get update -qq
+
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
   - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.7"; fi
@@ -27,4 +31,4 @@ addons:
       - clang-3.8
       - g++-5
       - gcc-5
-      - libsbml5
+      - libsbml5-dev
