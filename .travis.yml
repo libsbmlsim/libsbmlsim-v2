@@ -27,3 +27,4 @@ addons:
       - clang-3.8
       - g++-5
       - gcc-5
+      - libsbml5
