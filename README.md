@@ -1,2 +1,5 @@
-libsbmlsim-v2
-=============
+libsbmlsim
+==========
+
+## LICENSE
+LGPL
