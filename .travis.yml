@@ -34,3 +34,8 @@ addons:
       - gcc-5
       - libxml2-dev
       - libbz2-dev
+
+cache:
+  directories:
+    - test/integration/testsuite
+    - thirdparty/googletest
