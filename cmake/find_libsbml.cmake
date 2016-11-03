@@ -22,7 +22,7 @@ find_library(LIBSBML_LIBRARY
   NAMES libsbml.lib sbml
   PATHS ENV DYLD_LIBRARY_PATH
         ENV LD_LIBRARY_PATH
-        /usr/lib /usr/local/lib /opt/local/lib
+        /usr/lib64 /usr/lib /usr/local/lib /opt/local/lib
         ${CMAKE_SOURCE_DIR}/depend/lib
   HINTS ${PC_LIBSBML_LIBDIR} ${PC_LIBSBML_LIBRARY_DIRS} )
 
