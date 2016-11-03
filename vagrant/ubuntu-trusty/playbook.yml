@@ -1,0 +1,24 @@
+- hosts: all
+  become: yes
+  user: vagrant
+  tasks:
+    - name: install repositories
+      apt_repository: repo={{item}} state=present
+      with_items:
+        - ppa:ubuntu-toolchain-r/test
+        - ppa:george-edison55/cmake-3.x
+        - deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.8 main
+
+    - name: install packages
+      apt: name={{item}} state=present update_cache=yes
+      with_items:
+        - clang-3.8
+        - lldb-3.8
+        - g++-5
+        - gcc-5
+        - cmake
+        - git
+        - libbz2-dev
+
+    - name: install libsbml
+      apt: deb="http://downloads.sourceforge.net/project/sbml/libsbml/5.13.0/stable/Linux/64-bit/libSBML-5.13.0-Linux-x64.deb" state=present
