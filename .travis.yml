@@ -8,27 +8,35 @@ compiler:
   - g++
 
 before_install:
-  - sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ xenial main universe"
-  - sudo apt-get update -qq
+  - wget http://downloads.sourceforge.net/project/sbml/libsbml/5.13.0/stable/Linux/64-bit/libSBML-5.13.0-Linux-x64.deb
+  - sudo dpkg -i libSBML-5.13.0-Linux-x64.deb
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.7"; fi
+  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64
 
 script:
+  - rm -rf build
   - mkdir build
   - cd build
-  - cmake .. && make
+  - cmake -DCMAKE_BUILD_TYPE=Debug .. && make
   - ctest
 
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - llvm-toolchain-trusty-3.8
+      - llvm-toolchain-precise-3.8
     packages:
       - cmake
       - clang-3.8
       - g++-5
       - gcc-5
-      - libsbml5-dev
+      - libxml2-dev
+      - libbz2-dev
+
+cache:
+  directories:
+    - test/integration/testsuite
+    - thirdparty/googletest
