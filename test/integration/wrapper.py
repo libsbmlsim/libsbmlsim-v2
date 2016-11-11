@@ -1,7 +1,12 @@
 #!/usr/bin/env python
-
 import sys
 import os
+
+# check args
+if (len(sys.argv) < 6):
+  print 'Usage: ' + sys.argv[0] + ' test_case_dir num out_dir level version'
+  print '   ex: ' + sys.argv[0] + ' ~/.test-suite/cases/semantic 00001 /tmp/output 3 1'
+  sys.exit(0)
 
 # parse args
 test_case_dir = sys.argv[1]
