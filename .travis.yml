@@ -35,6 +35,9 @@ addons:
       - gcc-5
       - libxml2-dev
       - libbz2-dev
+      - libboost-all-dev
+      - oracle-java8-installer
+      - ant
 
 cache:
   directories:
