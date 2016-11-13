@@ -23,7 +23,7 @@ if(Boost_FOUND)
 endif()
 
 # test: testintegrator
-if (PythonInterp_FOUND)
+if (PYTHONINTERP_FOUND)
   #add_test(
   #NAME TestIntegrator1
   #COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/batchTest.py 1-1
