@@ -30,7 +30,7 @@ if (PYTHONINTERP_FOUND)
   #)
 add_test(
   NAME TestIntegrator6
-  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/batchTest.py 6-6
+  COMMAND ${PYTHON_EXECUTABLE} $<TARGET_FILE_DIR:testintegrator>/batchTest.py 6-6
   )
 endif()
 
@@ -39,3 +39,15 @@ install(TARGETS testintegrator
   RUNTIME DESTINATION bin
   )
 
+# copy the files related to integration-test and build testsuite
+# before the build of testintegrator
+add_custom_command(TARGET testintegrator PRE_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${CMAKE_CURRENT_SOURCE_DIR}/testsuite $<TARGET_FILE_DIR:testintegrator>/testsuite
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${CMAKE_CURRENT_SOURCE_DIR}/batchTest.py $<TARGET_FILE_DIR:testintegrator>
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.py $<TARGET_FILE_DIR:testintegrator>
+  COMMAND cd $<TARGET_FILE_DIR:testintegrator>/testsuite/src/front-ends/standalone/testsuite-ui && ant build
+  COMMENT "Building testsuite"
+  )
