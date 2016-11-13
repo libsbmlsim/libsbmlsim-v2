@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(libsbmlsim-integrationtest)
 
 # boost
-set(BOOST_USE_STATIC_LIBS OFF) 
-set(BOOST_USE_MULTITHREADED ON)  
-set(BOOST_USE_STATIC_RUNTIME OFF) 
+set(Boost_USE_STATIC_LIBS OFF) 
+set(Boost_USE_MULTITHREADED ON)  
+set(Boost_USE_STATIC_RUNTIME OFF) 
 find_package(Boost 1.45.0 COMPONENTS program_options) 
 
 # python
@@ -16,7 +16,7 @@ include_directories(${LIBSBMLSIM_INCLUDE_DIR})
 include_directories(${LIBSBML_INCLUDE_DIR})
 include_directories(${gtest_SOURCE_DIR}/include)
 
-if(BOOST_FOUND)
+if(Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS}) 
   add_executable(testintegrator testintegrator.cpp)
   target_link_libraries(testintegrator sbmlsim ${Boost_LIBRARIES})
