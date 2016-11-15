@@ -1,5 +1,4 @@
 #include <sbmlsim/SBMLSim.h>
-#include <iostream>
 
 using namespace std;
 

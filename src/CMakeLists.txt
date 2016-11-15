@@ -7,19 +7,22 @@ include_directories(${LIBSBMLSIM_INCLUDE_DIR})
 include_directories(${LIBSBML_INCLUDE_DIR})
 
 # static library
-add_library(sbmlsim-static STATIC ${LIBSBMLSIM_SOURCES})
-target_link_libraries(sbmlsim-static ${LIBSBML_LIBRARIES})
-#target_link_libraries(sbmlsim-static lsoda)
+if(NOT without-static)
+  add_library(sbmlsim-static STATIC ${LIBSBMLSIM_SOURCES})
+  target_link_libraries(sbmlsim-static ${LIBSBML_LIBRARIES})
+  install(TARGETS sbmlsim-static
+    ARCHIVE DESTINATION lib
+    )
+endif()
 
 # shared library
-add_library(sbmlsim SHARED ${LIBSBMLSIM_SOURCES})
-target_link_libraries(sbmlsim ${LIBSBML_LIBRARIES})
-#target_link_libraries(sbmlsim lsoda)
-set_target_properties(sbmlsim PROPERTIES VERSION "${PACKAGE_VERSION}" SOVERSION "${PACKAGE_COMPAT_VERSION}")
-
-# installation: libs
-install(TARGETS sbmlsim-static sbmlsim
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  )
+if(NOT without-shared)
+  add_library(sbmlsim SHARED ${LIBSBMLSIM_SOURCES})
+  target_link_libraries(sbmlsim ${LIBSBML_LIBRARIES})
+  #target_link_libraries(sbmlsim lsoda)
+  set_target_properties(sbmlsim PROPERTIES VERSION "${PACKAGE_VERSION}" SOVERSION "${PACKAGE_COMPAT_VERSION}")
+  install(TARGETS sbmlsim
+    LIBRARY DESTINATION lib
+    )
+endif()
 
