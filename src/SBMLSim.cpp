@@ -58,9 +58,9 @@ void SBMLSim::simulateRungeKutta4(const Model *model, const RunConfiguration &co
       stepper,
       system,
       initialState,
-      0.0,
+      conf.getStart(),
       conf.getDuration(),
-      conf.getDt(),
+      conf.getStepInterval(),
       [&](const state& x, const double t) {
         std::cout << t;
         for (int i = 0; i < x.size(); i++) {
@@ -91,9 +91,9 @@ void SBMLSim::simulateRosenbrock4(const Model *model, const RunConfiguration &co
       stepper,
       implicitSystem,
       initialState,
-      0.0,
+      conf.getStart(),
       conf.getDuration(),
-      conf.getDt(),
+      conf.getStepInterval(),
       [&](const state& x, const double t) {
         std::cout << t;
         for (int i = 0; i < x.size(); i++) {

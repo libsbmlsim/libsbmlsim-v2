@@ -3,7 +3,7 @@
 
 #include <sbml/SBMLTypes.h>
 #include <string>
-#include "sbmlsim/RunConfiguration.h"
+#include "sbmlsim/config/RunConfiguration.h"
 
 class SBMLSim {
  public:
