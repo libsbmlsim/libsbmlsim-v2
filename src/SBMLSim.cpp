@@ -1,6 +1,7 @@
 #include "sbmlsim/SBMLSim.h"
 #include "sbmlsim/system/SBMLSystem.h"
 #include "sbmlsim/system/SBMLSystemJacobi.h"
+#include "sbmlsim/observer/StdoutCsvObserver.h"
 #include "sbmlsim/internal/DevUtil.h"
 #include <iostream>
 #include <boost/numeric/odeint.hpp>
@@ -44,6 +45,7 @@ void SBMLSim::simulateRungeKutta4(const Model *model, const RunConfiguration &co
   SBMLSystem system(model);
   odeint::runge_kutta4<state> stepper;
   auto initialState = createInitialState(model);
+  StdoutCsvObserver observer;
 
   // print header
   std::cout << "t";
@@ -54,21 +56,7 @@ void SBMLSim::simulateRungeKutta4(const Model *model, const RunConfiguration &co
   std::cout << std::endl;
 
   // integrate
-  integrate_const(
-      stepper,
-      system,
-      initialState,
-      conf.getStart(),
-      conf.getDuration(),
-      conf.getStepInterval(),
-      [&](const state& x, const double t) {
-        std::cout << t;
-        for (int i = 0; i < x.size(); i++) {
-          std::cout << " " << x[i];
-        }
-        std::cout << std::endl;
-      }
-  );
+  integrate_const(stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), observer);
 }
 
 void SBMLSim::simulateRosenbrock4(const Model *model, const RunConfiguration &conf) {
@@ -77,6 +65,7 @@ void SBMLSim::simulateRosenbrock4(const Model *model, const RunConfiguration &co
   auto initialState = createInitialState(model);
   auto stepper = odeint::make_dense_output(1.0e-6, 1.0e-6, odeint::rosenbrock4<double>());
   auto implicitSystem = std::make_pair(system, systemJacobi);
+  StdoutCsvObserver observer;
 
   // print header
   std::cout << "t";
@@ -87,19 +76,6 @@ void SBMLSim::simulateRosenbrock4(const Model *model, const RunConfiguration &co
   std::cout << std::endl;
 
   // integrate
-  integrate_const(
-      stepper,
-      implicitSystem,
-      initialState,
-      conf.getStart(),
-      conf.getDuration(),
-      conf.getStepInterval(),
-      [&](const state& x, const double t) {
-        std::cout << t;
-        for (int i = 0; i < x.size(); i++) {
-          std::cout << " " << x[i];
-        }
-        std::cout << std::endl;
-      }
-  );
+  integrate_const(stepper, implicitSystem, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(),
+                  observer);
 }
