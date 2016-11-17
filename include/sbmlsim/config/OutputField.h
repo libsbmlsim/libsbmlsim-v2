@@ -2,6 +2,7 @@
 #define INCLUDE_SBMLSIM_CONFIG_OUTPUTFIELD_H_
 
 #include <string>
+#include <ostream>
 
 enum class OutputType;
 
@@ -20,5 +21,7 @@ enum class OutputType {
   AMOUNT,
   CONCENTRATION
 };
+
+std::ostream &operator<<(std::ostream &s, const OutputField &obj);
 
 #endif /* INCLUDE_SBMLSIM_CONFIG_OUTPUTFIELD_H_ */

@@ -16,3 +16,14 @@ const std::string &OutputField::getId() const {
 const OutputType &OutputField::getType() const {
   return this->type;
 }
+
+std::ostream &operator<<(std::ostream &s, const OutputField &obj) {
+  switch (obj.getType()) {
+    case OutputType::AMOUNT:
+      return s << "[" << obj.getId() << ", AMOUNT]";
+    case OutputType::CONCENTRATION:
+      return s << "[" << obj.getId() << ", CONCENTRATION]";
+    default:
+      return s << "[" << obj.getId() << ", UNKNOWN]";
+  }
+}
