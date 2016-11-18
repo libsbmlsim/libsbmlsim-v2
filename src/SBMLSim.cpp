@@ -26,32 +26,38 @@ void SBMLSim::simulate(const SBMLDocument *document, const RunConfiguration &con
 void SBMLSim::simulate(const Model *model, const RunConfiguration &conf) {
   DevUtil::dumpSBMLDocument(model->getSBMLDocument());
 
-  simulateRungeKutta4(model, conf);
-  //simulateRosenbrock4(model, conf);
+  ModelWrapper modelWrapper(model);
+
+  simulateRungeKutta4(modelWrapper, conf);
+  //simulateRosenbrock4(modelWrapper, conf);
 }
 
-state createInitialState(const Model *model) {
-  auto numSpecies = model->getNumSpecies();
+state createInitialState(const ModelWrapper &model) {
+  const std::vector<SpeciesWrapper> &specieses = model.getSpecieses();
+
+  auto numSpecies = specieses.size();
   state initialState(numSpecies);
   for (auto i = 0; i < numSpecies; i++) {
-    auto *species = model->getSpecies(i);
-    auto value = species->getInitialAmount();
+    auto species = specieses[i];
+    auto value = species.getInitialValue();
     initialState[i] = value;
   }
+
   return initialState;
 }
 
-void SBMLSim::simulateRungeKutta4(const Model *model, const RunConfiguration &conf) {
+void SBMLSim::simulateRungeKutta4(const ModelWrapper &model, const RunConfiguration &conf) {
   SBMLSystem system(model);
   odeint::runge_kutta4<state> stepper;
   auto initialState = createInitialState(model);
   StdoutCsvObserver observer;
 
   // print header
+  std::vector<SpeciesWrapper> specieses = model.getSpecieses();
   std::cout << "t";
-  for (auto i = 0; i < model->getNumSpecies(); i++) {
-    auto *species = model->getSpecies(i);
-    std::cout << " " << species->getId();
+  for (auto i = 0; i < specieses.size(); i++) {
+    auto species = specieses[i];
+    std::cout << "," << species.getId();
   }
   std::cout << std::endl;
 
@@ -59,19 +65,21 @@ void SBMLSim::simulateRungeKutta4(const Model *model, const RunConfiguration &co
   integrate_const(stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), observer);
 }
 
-void SBMLSim::simulateRosenbrock4(const Model *model, const RunConfiguration &conf) {
+void SBMLSim::simulateRosenbrock4(const ModelWrapper &model, const RunConfiguration &conf) {
   SBMLSystem system(model);
   SBMLSystemJacobi systemJacobi;
   auto initialState = createInitialState(model);
-  auto stepper = odeint::make_dense_output(1.0e-6, 1.0e-6, odeint::rosenbrock4<double>());
+  auto stepper = odeint::make_dense_output(conf.getAbsoluteTolerance(), conf.getRelativeTolerance(),
+                                           odeint::rosenbrock4<double>());
   auto implicitSystem = std::make_pair(system, systemJacobi);
   StdoutCsvObserver observer;
 
   // print header
+  std::vector<SpeciesWrapper> specieses = model.getSpecieses();
   std::cout << "t";
-  for (auto i = 0; i < model->getNumSpecies(); i++) {
-    auto *species = model->getSpecies(i);
-    std::cout << " " << species->getId();
+  for (auto i = 0; i < specieses.size(); i++) {
+    auto species = specieses[i];
+    std::cout << "," << species.getId();
   }
   std::cout << std::endl;
 

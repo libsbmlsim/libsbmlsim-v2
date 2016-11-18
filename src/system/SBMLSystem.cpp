@@ -1,6 +1,8 @@
 #include "sbmlsim/system/SBMLSystem.h"
+#include <algorithm>
+#include <cmath>
 
-SBMLSystem::SBMLSystem(const Model *model)
+SBMLSystem::SBMLSystem(const ModelWrapper &model)
     : model(model) {
   // nothing to do
 }
@@ -11,29 +13,25 @@ void SBMLSystem::operator()(const state& x, state& dxdt, double t) {
     dxdt[i] = 0.0;
   }
 
-  for (int i = 0; i < model->getNumReactions(); i++) {
-    const Reaction *reaction = model->getReaction(i);
-    const KineticLaw *kineticLaw = reaction->getKineticLaw();
-    const ASTNode *node = kineticLaw->getMath();
-    ASTNode *clonedNode = node->deepCopy();
+  auto reactions = model.getReactions();
+  for (int i = 0; i < reactions.size(); i++) {
+    auto reaction = reactions[i];
+    auto node = reaction.getMath();
+    auto clonedNode = node->deepCopy();
     clonedNode->reduceToBinary();
 
     double value = evaluateASTNode(clonedNode, i, x);
 
     // reactants
-    for (int j = 0; j < reaction->getNumReactants(); j++) {
-      const SpeciesReference *ref = reaction->getReactant(j);
-      const std::string speciesId = ref->getSpecies();
-      int index = getIndexForSpecies(speciesId);
-      dxdt[index] -= value;
+    for (auto reactant : reaction.getReactants()) {
+      auto index = getIndexForSpecies(reactant.getSpeciesId());
+      dxdt[index] -= value * reactant.getStoichiometry();
     }
 
     // products
-    for (int j = 0; j < reaction->getNumProducts(); j++) {
-      const SpeciesReference *ref = reaction->getProduct(j);
-      const std::string speciesId = ref->getSpecies();
-      int index = getIndexForSpecies(speciesId);
-      dxdt[index] += value;
+    for (auto product : reaction.getProducts()) {
+      int index = getIndexForSpecies(product.getSpeciesId());
+      dxdt[index] += value * product.getStoichiometry();
     }
   }
 }
@@ -51,35 +49,34 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const
   ASTNodeType_t type = node->getType();
   switch (type) {
     case AST_NAME: {
-      std::string name = node->getName();
+      auto name = node->getName();
       // species
-      for (int i = 0; i < model->getNumSpecies(); i++) {
-        const Species *species = model->getSpecies(i);
-        if (name == species->getId()) {
+      auto specieses = model.getSpecieses();
+      for (auto i = 0; i < specieses.size(); i++) {
+        if (name == specieses[i].getId()) {
           return x[i];
         }
       }
       // compartment
-      for (int i = 0; i < model->getNumCompartments(); i++) {
-        const Compartment *compartment = model->getCompartment(i);
-        if (name == compartment->getId()) {
-          return compartment->getSize();
+      auto compartments = model.getCompartments();
+      for (auto i = 0; i < compartments.size(); i++) {
+        if (name == compartments[i].getId()) {
+          return compartments[i].getValue();
         }
       }
-      // local parameter
-      const Reaction *reaction = model->getReaction(reactionIndex);
-      const KineticLaw *kineticLaw = reaction->getKineticLaw();
-      for (int i = 0; i < kineticLaw->getNumLocalParameters(); i++) {
-        const Parameter *parameter = kineticLaw->getLocalParameter(i);
-        if (name == parameter->getId()) {
-          return parameter->getValue();
+      // parameter
+      auto reactionId = model.getReactions().at(reactionIndex).getId();
+      auto parameters = model.getParameters();
+      for (auto i = 0; i < parameters.size(); i++) {
+        if (parameters[i].isLocalParameter()
+            && name == parameters[i].getId()
+            && reactionId == parameters[i].getReactionId()) {
+          return parameters[i].getValue();
         }
       }
-      // global parameter
-      for (int i = 0; i < model->getNumParameters(); i++) {
-        const Parameter *parameter = model->getParameter(i);
-        if (name == parameter->getId()) {
-          return parameter->getValue();
+      for (auto i = 0; i < parameters.size(); i++) {
+        if (parameters[i].isGlobalParameter() && name == parameters[i].getId()) {
+          return parameters[i].getValue();
         }
       }
       break;
@@ -94,19 +91,22 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const
       return left / right;
     case AST_REAL:
       return node->getReal();
+    case AST_POWER:
+    case AST_FUNCTION_POWER:
+      return std::pow(left, right);
     case AST_INTEGER:
       return node->getInteger();
     default:
-      assert(false);
+      std::cout << "type = " << type << std::endl;
       break;
   }
   return 0;
 }
 
-int SBMLSystem::getIndexForSpecies(std::string speciesId) {
-  for (int i = 0; i < model->getNumSpecies(); i++) {
-    const Species *species = model->getSpecies(i);
-    if (species->getId() == speciesId) {
+int SBMLSystem::getIndexForSpecies(const std::string &speciesId) {
+  auto specieses = model.getSpecieses();
+  for (auto i = 0; i < specieses.size(); i++) {
+    if (speciesId == specieses[i].getId()) {
       return i;
     }
   }

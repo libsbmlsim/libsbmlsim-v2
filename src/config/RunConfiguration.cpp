@@ -34,3 +34,11 @@ double RunConfiguration::getStepInterval() const {
 const std::vector<OutputField> &RunConfiguration::getOutputFields() const {
   return this->outputFields;
 }
+
+double RunConfiguration::getAbsoluteTolerance() const {
+  return this->absoluteTolerance;
+}
+
+double RunConfiguration::getRelativeTolerance() const {
+  return this->relativeTolerance;
+}

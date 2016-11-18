@@ -4,6 +4,7 @@
 #include <sbml/SBMLTypes.h>
 #include <string>
 #include "sbmlsim/config/RunConfiguration.h"
+#include "sbmlsim/internal/wrapper/ModelWrapper.h"
 
 class SBMLSim {
  public:
@@ -13,8 +14,8 @@ class SBMLSim {
   SBMLSim() {}
   ~SBMLSim() {}
   static void simulate(const Model *model, const RunConfiguration &conf);
-  static void simulateRungeKutta4(const Model *model, const RunConfiguration &conf);
-  static void simulateRosenbrock4(const Model *model, const RunConfiguration &conf);
+  static void simulateRungeKutta4(const ModelWrapper &model, const RunConfiguration &conf);
+  static void simulateRosenbrock4(const ModelWrapper &model, const RunConfiguration &conf);
 };
 
 #endif /* INCLUDE_SBMLSIM_SBMLSIM_H_ */
