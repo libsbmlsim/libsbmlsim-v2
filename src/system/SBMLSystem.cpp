@@ -35,10 +35,10 @@ void SBMLSystem::operator()(const state& x, state& dxdt, double t) {
     }
   }
 
-  // boundary condition
+  // boundaryCondition and constant
   auto &specieses = model.getSpecieses();
   for (auto i = 0; i < specieses.size(); i++) {
-    if (specieses[i].hasBoundaryCondition()) {
+    if (specieses[i].hasBoundaryCondition() || specieses[i].isConstant()) {
       dxdt[i] = 0.0;
     }
   }

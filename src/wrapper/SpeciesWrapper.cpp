@@ -32,6 +32,12 @@ SpeciesWrapper::SpeciesWrapper(const Species *species) {
     this->boundaryCondition = false;
   }
 
+  if (species->isSetConstant()) {
+    this->constant = species->getConstant();
+  } else {
+    this->constant = false;
+  }
+
   this->value = this->initialValue;
 }
 
@@ -42,6 +48,7 @@ SpeciesWrapper::SpeciesWrapper(const SpeciesWrapper &species) {
   this->valueType = species.valueType;
   this->substanceUnitsOnly = species.substanceUnitsOnly;
   this->boundaryCondition = species.boundaryCondition;
+  this->constant = species.constant;
 }
 
 SpeciesWrapper::~SpeciesWrapper() {
@@ -78,4 +85,8 @@ bool SpeciesWrapper::hasOnlySubstanceUnits() const {
 
 bool SpeciesWrapper::hasBoundaryCondition() const {
   return this->boundaryCondition;
+}
+
+bool SpeciesWrapper::isConstant() const {
+  return this->constant;
 }
