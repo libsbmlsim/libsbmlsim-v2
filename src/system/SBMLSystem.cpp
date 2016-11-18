@@ -9,18 +9,18 @@ SBMLSystem::SBMLSystem(const ModelWrapper &model)
 
 void SBMLSystem::operator()(const state& x, state& dxdt, double t) {
   // initialize
-  for (int i = 0; i < dxdt.size(); i++) {
+  for (auto i = 0; i < dxdt.size(); i++) {
     dxdt[i] = 0.0;
   }
 
   auto reactions = model.getReactions();
-  for (int i = 0; i < reactions.size(); i++) {
+  for (auto i = 0; i < reactions.size(); i++) {
     auto reaction = reactions[i];
     auto node = reaction.getMath();
     auto clonedNode = node->deepCopy();
     clonedNode->reduceToBinary();
 
-    double value = evaluateASTNode(clonedNode, i, x);
+    auto value = evaluateASTNode(clonedNode, i, x);
 
     // reactants
     for (auto reactant : reaction.getReactants()) {
@@ -30,8 +30,16 @@ void SBMLSystem::operator()(const state& x, state& dxdt, double t) {
 
     // products
     for (auto product : reaction.getProducts()) {
-      int index = getIndexForSpecies(product.getSpeciesId());
+      auto index = getIndexForSpecies(product.getSpeciesId());
       dxdt[index] += value * product.getStoichiometry();
+    }
+  }
+
+  // boundary condition
+  auto &specieses = model.getSpecieses();
+  for (auto i = 0; i < specieses.size(); i++) {
+    if (specieses[i].hasBoundaryCondition()) {
+      dxdt[i] = 0.0;
     }
   }
 }

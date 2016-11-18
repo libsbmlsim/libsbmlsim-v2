@@ -26,6 +26,12 @@ SpeciesWrapper::SpeciesWrapper(const Species *species) {
     }
   }
 
+  if (species->isSetBoundaryCondition()) {
+    this->boundaryCondition = species->getBoundaryCondition();
+  } else {
+    this->boundaryCondition = false;
+  }
+
   this->value = this->initialValue;
 }
 
@@ -35,6 +41,7 @@ SpeciesWrapper::SpeciesWrapper(const SpeciesWrapper &species) {
   this->value = species.value;
   this->valueType = species.valueType;
   this->substanceUnitsOnly = species.substanceUnitsOnly;
+  this->boundaryCondition = species.boundaryCondition;
 }
 
 SpeciesWrapper::~SpeciesWrapper() {
@@ -67,4 +74,8 @@ bool SpeciesWrapper::isConcentrationValue() const {
 
 bool SpeciesWrapper::hasOnlySubstanceUnits() const {
   return this->substanceUnitsOnly;
+}
+
+bool SpeciesWrapper::hasBoundaryCondition() const {
+  return this->boundaryCondition;
 }

@@ -18,12 +18,14 @@ class SpeciesWrapper {
   bool isAmountValue() const;
   bool isConcentrationValue() const;
   bool hasOnlySubstanceUnits() const;
+  bool hasBoundaryCondition() const;
  private:
   std::string id;
   double value;
   double initialValue;
   SpeciesValueType valueType;
   bool substanceUnitsOnly;
+  bool boundaryCondition;
 };
 
 enum class SpeciesValueType {
