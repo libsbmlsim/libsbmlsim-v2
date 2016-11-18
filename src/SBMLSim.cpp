@@ -29,7 +29,8 @@ void SBMLSim::simulate(const Model *model, const RunConfiguration &conf) {
   ModelWrapper modelWrapper(model);
 
   //simulateRungeKutta4(modelWrapper, conf);
-  simulateRungeKuttaDopri5(modelWrapper, conf);
+  //simulateRungeKuttaDopri5(modelWrapper, conf);
+  simulateRungeKuttaFehlberg78(modelWrapper, conf);
   //simulateRosenbrock4(modelWrapper, conf);
 }
 
@@ -69,6 +70,26 @@ void SBMLSim::simulateRungeKutta4(const ModelWrapper &model, const RunConfigurat
 void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper &model, const RunConfiguration &conf) {
   SBMLSystem system(model);
   auto stepper = odeint::make_controlled<odeint::runge_kutta_dopri5<state> >(
+      conf.getAbsoluteTolerance(), conf.getRelativeTolerance());
+  auto initialState = createInitialState(model);
+  StdoutCsvObserver observer;
+
+  // print header
+  std::vector<SpeciesWrapper> specieses = model.getSpecieses();
+  std::cout << "t";
+  for (auto i = 0; i < specieses.size(); i++) {
+    auto species = specieses[i];
+    std::cout << "," << species.getId();
+  }
+  std::cout << std::endl;
+
+  // integrate
+  integrate_const(stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), observer);
+}
+
+void SBMLSim::simulateRungeKuttaFehlberg78(const ModelWrapper &model, const RunConfiguration &conf) {
+  SBMLSystem system(model);
+  auto stepper = odeint::make_controlled<odeint::runge_kutta_fehlberg78<state> >(
       conf.getAbsoluteTolerance(), conf.getRelativeTolerance());
   auto initialState = createInitialState(model);
   StdoutCsvObserver observer;

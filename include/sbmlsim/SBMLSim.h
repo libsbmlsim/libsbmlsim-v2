@@ -16,6 +16,7 @@ class SBMLSim {
   static void simulate(const Model *model, const RunConfiguration &conf);
   static void simulateRungeKutta4(const ModelWrapper &model, const RunConfiguration &conf);
   static void simulateRungeKuttaDopri5(const ModelWrapper &model, const RunConfiguration &conf);
+  static void simulateRungeKuttaFehlberg78(const ModelWrapper &model, const RunConfiguration &conf);
   static void simulateRosenbrock4(const ModelWrapper &model, const RunConfiguration &conf);
 };
 
