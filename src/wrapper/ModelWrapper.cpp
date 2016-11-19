@@ -34,6 +34,12 @@ ModelWrapper::ModelWrapper(const Model *model) {
     auto reaction = model->getReaction(i);
     this->reactions.push_back(ReactionWrapper(reaction));
   }
+
+  // function definitions
+  for (auto i = 0; i < model->getNumFunctionDefinitions(); i++) {
+    auto functionDefinition = model->getFunctionDefinition(i);
+    this->functionDefinitions.push_back(FunctionDefinitionWrapper(functionDefinition));
+  }
 }
 
 ModelWrapper::ModelWrapper(const ModelWrapper &model) {
@@ -41,6 +47,7 @@ ModelWrapper::ModelWrapper(const ModelWrapper &model) {
   this->parameters = model.parameters;
   this->compartments = model.compartments;
   this->reactions = model.reactions;
+  this->functionDefinitions = model.functionDefinitions;
 }
 
 ModelWrapper::~ModelWrapper() {
@@ -48,6 +55,7 @@ ModelWrapper::~ModelWrapper() {
   this->parameters.clear();
   this->compartments.clear();
   this->reactions.clear();
+  this->functionDefinitions.clear();
 }
 
 const std::vector<SpeciesWrapper> &ModelWrapper::getSpecieses() const {
@@ -64,4 +72,8 @@ const std::vector<CompartmentWrapper> &ModelWrapper::getCompartments() const {
 
 const std::vector<ReactionWrapper> &ModelWrapper::getReactions() const {
   return this->reactions;
+}
+
+const std::vector<FunctionDefinitionWrapper> &ModelWrapper::getFunctionDefinitions() const {
+  return this->functionDefinitions;
 }

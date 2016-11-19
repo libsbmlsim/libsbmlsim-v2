@@ -47,61 +47,35 @@ void SBMLSystem::operator()(const state& x, state& dxdt, double t) {
 double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const state& x) {
   double left, right;
 
-  if (node->getLeftChild() != NULL) {
-    left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
-  }
-  if (node->getRightChild() != NULL) {
-    right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
-  }
-
   ASTNodeType_t type = node->getType();
   switch (type) {
-    case AST_NAME: {
-      auto name = node->getName();
-      // species
-      auto specieses = model.getSpecieses();
-      for (auto i = 0; i < specieses.size(); i++) {
-        if (name == specieses[i].getId()) {
-          return x[i];
-        }
-      }
-      // compartment
-      auto compartments = model.getCompartments();
-      for (auto i = 0; i < compartments.size(); i++) {
-        if (name == compartments[i].getId()) {
-          return compartments[i].getValue();
-        }
-      }
-      // parameter
-      auto reactionId = model.getReactions().at(reactionIndex).getId();
-      auto parameters = model.getParameters();
-      for (auto i = 0; i < parameters.size(); i++) {
-        if (parameters[i].isLocalParameter()
-            && name == parameters[i].getId()
-            && reactionId == parameters[i].getReactionId()) {
-          return parameters[i].getValue();
-        }
-      }
-      for (auto i = 0; i < parameters.size(); i++) {
-        if (parameters[i].isGlobalParameter() && name == parameters[i].getId()) {
-          return parameters[i].getValue();
-        }
-      }
-      break;
-    }
+    case AST_NAME:
+      return evaluateNameNode(node, reactionIndex, x);
     case AST_PLUS:
+      left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
+      right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
       return left + right;
     case AST_MINUS:
+      left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
+      right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
       return left - right;
     case AST_TIMES:
+      left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
+      right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
       return left * right;
     case AST_DIVIDE:
+      left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
+      right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
       return left / right;
-    case AST_REAL:
-      return node->getReal();
     case AST_POWER:
     case AST_FUNCTION_POWER:
+      left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
+      right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
       return std::pow(left, right);
+    case AST_FUNCTION:
+      return evaluateFunctionNode(node, reactionIndex, x);
+    case AST_REAL:
+      return node->getReal();
     case AST_INTEGER:
       return node->getInteger();
     default:
@@ -109,6 +83,63 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const
       break;
   }
   return 0;
+}
+
+double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, const state &x) {
+  auto name = node->getName();
+
+  // species
+  auto specieses = model.getSpecieses();
+  for (auto i = 0; i < specieses.size(); i++) {
+    if (name == specieses[i].getId()) {
+      return x[i];
+    }
+  }
+
+  // compartment
+  auto compartments = model.getCompartments();
+  for (auto i = 0; i < compartments.size(); i++) {
+    if (name == compartments[i].getId()) {
+      return compartments[i].getValue();
+    }
+  }
+
+  // parameter
+  auto reactionId = model.getReactions().at(reactionIndex).getId();
+  auto parameters = model.getParameters();
+  for (auto i = 0; i < parameters.size(); i++) {
+    if (parameters[i].isLocalParameter()
+        && name == parameters[i].getId()
+        && reactionId == parameters[i].getReactionId()) {
+      return parameters[i].getValue();
+    }
+  }
+  for (auto i = 0; i < parameters.size(); i++) {
+    if (parameters[i].isGlobalParameter() && name == parameters[i].getId()) {
+      return parameters[i].getValue();
+    }
+  }
+
+  return 0.0;
+}
+
+double SBMLSystem::evaluateFunctionNode(const ASTNode *node, int reactionIndex, const state &x) {
+  auto name = node->getName();
+  for (auto functionDefinition : model.getFunctionDefinitions()) {
+    if (name == functionDefinition.getName()) {
+      auto body = functionDefinition.getBody()->deepCopy();
+      for (auto i = 0; i < body->getNumChildren(); i++) {
+        auto bvar = body->getChild(i)->getName();
+        body->replaceArgument(bvar, node->getChild(i));
+      }
+      auto value = evaluateASTNode(body, reactionIndex, x);
+      delete body;
+      return value;
+    }
+  }
+
+  // not reachable
+  return 0.0;
 }
 
 int SBMLSystem::getIndexForSpecies(const std::string &speciesId) {

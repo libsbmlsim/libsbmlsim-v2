@@ -17,6 +17,8 @@ class SBMLSystem {
  private:
   const ModelWrapper model;
   double evaluateASTNode(const ASTNode *node, int reactionIndex, const state &x);
+  double evaluateNameNode(const ASTNode *node, int reactionIndex, const state &x);
+  double evaluateFunctionNode(const ASTNode *node, int reactionIndex, const state &x);
   int getIndexForSpecies(const std::string &speciesId);
 };
 
