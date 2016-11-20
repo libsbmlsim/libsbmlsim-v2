@@ -1,4 +1,4 @@
-#include "sbmlsim/system/SBMLSystemJacobi.h"
+#include "sbmlsim/internal/system/SBMLSystemJacobi.h"
 
 void SBMLSystemJacobi::operator()(const state &x, matrix &J, const double &t, state &dfdt) {
   // works with 00001-sbml-l2v4.xml only

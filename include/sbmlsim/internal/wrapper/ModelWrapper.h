@@ -9,6 +9,7 @@
 #include "sbmlsim/internal/wrapper/CompartmentWrapper.h"
 #include "sbmlsim/internal/wrapper/ReactionWrapper.h"
 #include "sbmlsim/internal/wrapper/FunctionDefinitionWrapper.h"
+#include "sbmlsim/internal/wrapper/EventWrapper.h"
 
 class ModelWrapper {
  public:
@@ -20,12 +21,14 @@ class ModelWrapper {
   const std::vector<CompartmentWrapper> &getCompartments() const;
   const std::vector<ReactionWrapper> &getReactions() const;
   const std::vector<FunctionDefinitionWrapper> &getFunctionDefinitions() const;
+  std::vector<EventWrapper *> &getEvents();
  private:
   std::vector<SpeciesWrapper> specieses;
   std::vector<ParameterWrapper> parameters;
   std::vector<CompartmentWrapper> compartments;
   std::vector<ReactionWrapper> reactions;
   std::vector<FunctionDefinitionWrapper> functionDefinitions;
+  std::vector<EventWrapper *> events;
 };
 
 #endif /* INCLUDE_SBMLSIM_INTERNAL_WRAPPER_MODELWRAPPER_H_ */

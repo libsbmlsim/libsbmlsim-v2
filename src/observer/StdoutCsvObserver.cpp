@@ -1,4 +1,4 @@
-#include "sbmlsim/observer/StdoutCsvObserver.h"
+#include "sbmlsim/internal/observer/StdoutCsvObserver.h"
 #include <iomanip>
 
 void StdoutCsvObserver::operator()(const SBMLSystem::state &x, double t) {

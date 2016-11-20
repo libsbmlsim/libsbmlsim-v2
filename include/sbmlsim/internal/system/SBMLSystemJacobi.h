@@ -1,5 +1,5 @@
-#ifndef INCLUDE_SBMLSIM_SYSTEM_SBMLSYSTEMJACOBI_H_
-#define INCLUDE_SBMLSIM_SYSTEM_SBMLSYSTEMJACOBI_H_
+#ifndef INCLUDE_SBMLSIM_INTERNAL_SYSTEM_SBMLSYSTEMJACOBI_H_
+#define INCLUDE_SBMLSIM_INTERNAL_SYSTEM_SBMLSYSTEMJACOBI_H_
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -14,4 +14,4 @@ class SBMLSystemJacobi {
   void operator()(const state &x, matrix &J, const double &t, state &dfdt);
 };
 
-#endif /* INCLUDE_SBMLSIM_SYSTEM_SBMLSYSTEMJACOBI_H_ */
+#endif /* INCLUDE_SBMLSIM_INTERNAL_SYSTEM_SBMLSYSTEMJACOBI_H_ */

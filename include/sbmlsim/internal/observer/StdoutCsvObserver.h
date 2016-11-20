@@ -1,7 +1,7 @@
 #ifndef INCLUDE_SBMLSIM_INTERNAL_OBSERVER_STDOUTCSVOBSERVER_H_
 #define INCLUDE_SBMLSIM_INTERNAL_OBSERVER_STDOUTCSVOBSERVER_H_
 
-#include "sbmlsim/system/SBMLSystem.h"
+#include "sbmlsim/internal/system/SBMLSystem.h"
 
 class StdoutCsvObserver {
  public:

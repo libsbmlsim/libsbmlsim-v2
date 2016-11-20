@@ -1,4 +1,4 @@
-#include "sbmlsim/internal/DevUtil.h"
+#include "sbmlsim/internal/util/DevUtil.h"
 
 #include <cassert>
 
