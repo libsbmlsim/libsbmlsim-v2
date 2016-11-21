@@ -93,11 +93,11 @@ void SBMLSim::simulate(const Model *model, const RunConfiguration &conf) {
   }
 
   // print header
-  cout << "t";
+  cout << "time";
   for (unsigned int i = 0; i < numSpecies; i++) {
     const Species *species = model->getSpecies(i);
     const string speciesId = species->getId();
-    cout << " " << speciesId;
+    cout << "," << speciesId;
   }
   cout << endl;
 
@@ -110,7 +110,7 @@ void SBMLSim::simulate(const Model *model, const RunConfiguration &conf) {
     for (unsigned int i = 0; i < numSpecies; i++) {
       const Species *species = model->getSpecies(i);
       const string speciesId = species->getId();
-      cout << " " << speciesValues[speciesId];
+      cout << "," << speciesValues[speciesId];
     }
     cout << endl;
 
