@@ -2,6 +2,7 @@
 #define INCLUDE_SBMLSIM_INTERNAL_INTEGRATE_INTEGRATEADAPTIVE_H_
 
 #include <boost/numeric/odeint.hpp>
+#include <stdexcept>
 #include "sbmlsim/internal/system/SBMLSystem.h"
 
 using namespace boost::numeric;
@@ -34,7 +35,8 @@ size_t integrate_adaptive_detail(
       if (steps >= MAX_STEPS) {
         char errorMsg[200];
         sprintf(errorMsg, "Max number of iterations exceeded (%d).", MAX_STEPS);
-        BOOST_THROW_EXCEPTION(odeint::no_progress_error(errorMsg));
+        // DO NOT USE no_progress_error to make it to compatible with boost-1.54.0.
+        BOOST_THROW_EXCEPTION(std::runtime_error(errorMsg));
       }
     } while (res == odeint::fail);
 
