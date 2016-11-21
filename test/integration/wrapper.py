@@ -19,7 +19,7 @@ version = sys.argv[5]
 ## simulator
 fdir = os.path.dirname(os.path.abspath(__file__))
 ppdir = os.path.dirname(os.path.dirname(fdir))  # same as '../../fdir'
-sim = ppdir + '/build/test/integration/testintegrator'
+sim = ppdir + '/test/integration/testintegrator'
 ## sbml and settings
 case_dir = test_case_dir + '/' + num
 sbml = num + '-sbml-l' + level + 'v' + version + '.xml'
@@ -36,8 +36,15 @@ with open(setting_path, 'r') as f:
       duration = words[1].strip()
     if (words[0] == 'steps'):
       steps = words[1].strip()
+    if (words[0] == 'variables'):
+      variables = words[1].strip()
+    if (words[0] == 'amount'):
+      amount = words[1].strip()
+    if (words[0] == 'concentration'):
+      concentration = words[1].strip()
 
-opts = '-t ' + duration + ' -d ' + str(float(duration)/float(steps))
+opts = '-t %s -d %s -v "%s" -a "%s" -c "%s"' \
+        % (duration, str(float(duration)/float(steps)), variables, amount, concentration)
 
 #commandline = sim + ' ' + opts + ' ' + sbml_path + " | sed -e 's/ /,/g' > " + out_dir + '/' + num + '.csv'
 commandline = sim + ' ' + opts + ' ' + sbml_path + " > " + out_dir + '/' + num + '.csv'
