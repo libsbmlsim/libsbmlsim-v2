@@ -1,6 +1,7 @@
 #ifndef INCLUDE_SBMLSIM_INTERNAL_INTEGRATE_INTEGRATECONST_H_
 #define INCLUDE_SBMLSIM_INTERNAL_INTEGRATE_INTEGRATECONST_H_
 
+#include <boost/numeric/odeint.hpp>
 #include "sbmlsim/internal/system/SBMLSystem.h"
 #include "sbmlsim/internal/integrate/IntegrateAdaptive.h"
 

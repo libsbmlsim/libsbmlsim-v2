@@ -1,7 +1,6 @@
 #include "sbmlsim/SBMLSim.h"
 #include "sbmlsim/internal/system/SBMLSystem.h"
 #include "sbmlsim/internal/system/SBMLSystemJacobi.h"
-#include "sbmlsim/internal/stepper/RungeKuttaFehlberg78Stepper.h"
 #include "sbmlsim/internal/integrate/IntegrateConst.h"
 #include "sbmlsim/internal/observer/StdoutCsvObserver.h"
 #include "sbmlsim/internal/util/DevUtil.h"
@@ -95,7 +94,6 @@ void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfi
 
 void SBMLSim::simulateRungeKuttaFehlberg78(const ModelWrapper *model, const RunConfiguration &conf) {
   SBMLSystem system(model);
-  //auto stepper = odeint::make_controlled<RungeKuttaFehlberg78Stepper<state> >(
   auto stepper = odeint::make_controlled<odeint::runge_kutta_fehlberg78<state> >(
       conf.getAbsoluteTolerance(), conf.getRelativeTolerance());
   auto initialState = createInitialState(model);
