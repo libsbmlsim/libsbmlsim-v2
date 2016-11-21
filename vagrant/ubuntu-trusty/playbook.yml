@@ -7,6 +7,7 @@
       with_items:
         - ppa:ubuntu-toolchain-r/test
         - ppa:george-edison55/cmake-3.x
+        - ppa:openjdk-r/ppa
         - deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.8 main
 
     - name: install packages
@@ -19,6 +20,9 @@
         - cmake
         - git
         - libbz2-dev
+        - libboost-all-dev
+        - openjdk-8-jdk
+        - ant
 
     - name: install libsbml
       apt: deb="http://downloads.sourceforge.net/project/sbml/libsbml/5.13.0/stable/Linux/64-bit/libSBML-5.13.0-Linux-x64.deb" state=present
