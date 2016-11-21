@@ -16,7 +16,6 @@ size_t integrate_adaptive_detail(
   typename odeint::unwrap_reference<Observer>::type &obs = observer;
   typename odeint::unwrap_reference<Stepper>::type &st = stepper;
 
-  odeint::failed_step_checker fail_checker;  // to throw a runtime_error if step size adjustment fails
   size_t count = 0;
   while (odeint::detail::less_with_sign(start_time, end_time, dt)) {
     obs(start_state, start_time);
@@ -24,12 +23,20 @@ size_t integrate_adaptive_detail(
       dt = end_time - start_time;
     }
 
+    const int MAX_STEPS = 500;
+    int steps = 0;
     odeint::controlled_step_result res;
     do {
       res = st.try_step(system, start_state, start_time, dt);
-      fail_checker();  // check number of failed steps
+
+      // DO NOT USE failed_step_checker to make it to compatible with boost-1.54.0.
+      steps++;
+      if (steps >= MAX_STEPS) {
+        char errorMsg[200];
+        sprintf(errorMsg, "Max number of iterations exceeded (%d).", MAX_STEPS);
+        BOOST_THROW_EXCEPTION(odeint::no_progress_error(errorMsg));
+      }
     } while (res == odeint::fail);
-    fail_checker.reset();  // if we reach here, the step was successful -> reset fail checker
 
     ++count;
   }
