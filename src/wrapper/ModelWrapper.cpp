@@ -46,6 +46,12 @@ ModelWrapper::ModelWrapper(const Model *model) {
     auto event = model->getEvent(i);
     this->events.push_back(new EventWrapper(event));
   }
+
+  // initial assignments
+  for (auto i = 0; i < model->getNumInitialAssignments(); i++) {
+    auto initialAssignment = model->getInitialAssignment(i);
+    this->initialAssignments.push_back(new InitialAssignmentWrapper(initialAssignment));
+  }
 }
 
 ModelWrapper::ModelWrapper(const ModelWrapper &model) {
@@ -55,6 +61,7 @@ ModelWrapper::ModelWrapper(const ModelWrapper &model) {
   this->reactions = model.reactions;
   this->functionDefinitions = model.functionDefinitions;
   this->events = model.events;
+  this->initialAssignments = model.initialAssignments;
 }
 
 ModelWrapper::~ModelWrapper() {
@@ -68,6 +75,11 @@ ModelWrapper::~ModelWrapper() {
     delete event;
   }
   this->events.clear();
+
+  for (auto initialAssignment : this->initialAssignments) {
+    delete initialAssignment;
+  }
+  this->initialAssignments.clear();
 }
 
 const std::vector<SpeciesWrapper> &ModelWrapper::getSpecieses() const {
@@ -92,4 +104,8 @@ const std::vector<FunctionDefinitionWrapper> &ModelWrapper::getFunctionDefinitio
 
 std::vector<EventWrapper *> &ModelWrapper::getEvents() {
   return this->events;
+}
+
+std::vector<InitialAssignmentWrapper *> &ModelWrapper::getInitialAssignments() {
+  return this->initialAssignments;
 }

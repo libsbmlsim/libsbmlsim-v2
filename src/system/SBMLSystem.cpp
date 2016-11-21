@@ -77,6 +77,37 @@ void SBMLSystem::handleEvent(state &x, double t) {
   }
 }
 
+void SBMLSystem::handleInitialAssignment(state &x, double t) {
+  for (auto initialAssignment : model->getInitialAssignments()) {
+    auto symbol = initialAssignment->getSymbol();
+    auto value = evaluateASTNode(initialAssignment->getMath(), UNDEFINED_REACTION_INDEX, x);
+
+    // species
+    auto specieses = model->getSpecieses();
+    for (auto i = 0; i < specieses.size(); i++) {
+      if (symbol == specieses[i].getId()) {
+        x[i] = value;
+      }
+    }
+
+    // compartment
+    auto compartments = model->getCompartments();
+    for (auto i = 0; i < compartments.size(); i++) {
+      if (symbol == compartments[i].getId()) {
+        compartments[i].setValue(value);
+      }
+    }
+
+    // global parameter
+    auto parameters = model->getParameters();
+    for (auto i = 0; i < parameters.size(); i++) {
+      if (parameters[i].isGlobalParameter() && symbol == parameters[i].getId()) {
+        parameters[i].setValue(value);
+      }
+    }
+  }
+}
+
 double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const state& x) {
   double left, right;
 

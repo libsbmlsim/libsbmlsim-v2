@@ -10,6 +10,7 @@ class CompartmentWrapper {
   CompartmentWrapper(const CompartmentWrapper &compartment);
   ~CompartmentWrapper();
   const std::string &getId() const;
+  void setValue(double value);
   double getValue() const;
  private:
   std::string id;
