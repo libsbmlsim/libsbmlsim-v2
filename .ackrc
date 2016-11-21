@@ -1,0 +1,3 @@
+--color
+--ignore-dir=.idea/
+--ignore-dir=testsuite/
