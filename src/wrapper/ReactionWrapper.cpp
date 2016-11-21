@@ -15,6 +15,7 @@ ReactionWrapper::ReactionWrapper(const Reaction *reaction) {
 }
 
 ReactionWrapper::ReactionWrapper(const ReactionWrapper &reaction) {
+  this->id = reaction.id;
   this->reactants = reaction.reactants;
   this->products = reaction.products;
   this->math = reaction.math->deepCopy();
