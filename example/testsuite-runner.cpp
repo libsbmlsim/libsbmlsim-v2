@@ -1,3 +1,4 @@
+#include <sbmlsim/SBMLSim.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -5,7 +6,6 @@
 #include <vector>
 #include <algorithm>
 #include <cstdlib>
-#include <sbmlsim/SBMLSim.h>
 
 using namespace std;
 

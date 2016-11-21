@@ -5,13 +5,13 @@
 #include <string>
 
 class EventAssignmentWrapper {
-public:
+ public:
   explicit EventAssignmentWrapper(const EventAssignment *eventAssignment);
   EventAssignmentWrapper(const EventAssignmentWrapper &eventAssignment);
   ~EventAssignmentWrapper();
   const std::string &getVariable() const;
   const ASTNode *getMath() const;
-private:
+ private:
   std::string variable;
   const ASTNode *math;
 };

@@ -11,7 +11,7 @@ namespace sbmlsim {
 
 template<class Stepper, class Observer>
 size_t integrate_const_detail(
-    Stepper stepper, SBMLSystem system, SBMLSystem::state &start_state,
+    Stepper &stepper, SBMLSystem &system, SBMLSystem::state &start_state,
     double start_time, double end_time, double dt,
     Observer observer, odeint::controlled_stepper_tag) {
   typename odeint::unwrap_reference<Observer>::type &obs = observer;
@@ -42,7 +42,7 @@ size_t integrate_const_detail(
 
 template<class Stepper, class Time, class Observer>
 size_t integrate_const(
-    Stepper stepper, SBMLSystem system, SBMLSystem::state &start_state,
+    Stepper &stepper, SBMLSystem &system, SBMLSystem::state &start_state,
     Time start_time, Time end_time, Time dt, Observer observer) {
   typedef typename odeint::unwrap_reference<Stepper>::type::stepper_category stepper_category;
   return integrate_const_detail(stepper, system, start_state,

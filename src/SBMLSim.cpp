@@ -1,11 +1,12 @@
 #include "sbmlsim/SBMLSim.h"
+
+#include <iostream>
+#include <boost/numeric/odeint.hpp>
 #include "sbmlsim/internal/system/SBMLSystem.h"
 #include "sbmlsim/internal/system/SBMLSystemJacobi.h"
 #include "sbmlsim/internal/integrate/IntegrateConst.h"
 #include "sbmlsim/internal/observer/StdoutCsvObserver.h"
 #include "sbmlsim/internal/util/DevUtil.h"
-#include <iostream>
-#include <boost/numeric/odeint.hpp>
 
 using namespace boost::numeric;
 using state = SBMLSystem::state;
@@ -29,10 +30,10 @@ void SBMLSim::simulate(const Model *model, const RunConfiguration &conf) {
 
   ModelWrapper *modelWrapper = new ModelWrapper(model);
 
-  //simulateRungeKutta4(modelWrapper, conf);
-  //simulateRungeKuttaDopri5(modelWrapper, conf);
+  // simulateRungeKutta4(modelWrapper, conf);
+  // simulateRungeKuttaDopri5(modelWrapper, conf);
   simulateRungeKuttaFehlberg78(modelWrapper, conf);
-  //simulateRosenbrock4(modelWrapper, conf);
+  // simulateRosenbrock4(modelWrapper, conf);
 
   delete modelWrapper;
 }

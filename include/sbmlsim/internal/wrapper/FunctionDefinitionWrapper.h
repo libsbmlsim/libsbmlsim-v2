@@ -6,14 +6,14 @@
 #include <vector>
 
 class FunctionDefinitionWrapper {
-public:
+ public:
   explicit FunctionDefinitionWrapper(const FunctionDefinition *functionDefinition);
   FunctionDefinitionWrapper(const FunctionDefinitionWrapper &functionDefinition);
   ~FunctionDefinitionWrapper();
   const std::string &getName() const;
   const std::vector<std::string> &getArguments() const;
   const ASTNode *getBody() const;
-private:
+ private:
   std::string name;
   std::vector<std::string> arguments;
   const ASTNode *body;

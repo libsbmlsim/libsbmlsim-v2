@@ -5,13 +5,13 @@
 #include <string>
 
 class InitialAssignmentWrapper {
-public:
+ public:
   explicit InitialAssignmentWrapper(const InitialAssignment *initialAssignment);
   InitialAssignmentWrapper(const InitialAssignmentWrapper &initialAssignment);
   ~InitialAssignmentWrapper();
   const std::string &getSymbol() const;
   const ASTNode *getMath() const;
-private:
+ private:
   std::string symbol;
   ASTNode *math;
 };
