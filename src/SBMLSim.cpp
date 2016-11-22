@@ -60,7 +60,7 @@ void SBMLSim::simulateRungeKutta4(const ModelWrapper *model, const RunConfigurat
 
   // print header
   std::vector<SpeciesWrapper> specieses = model->getSpecieses();
-  std::cout << "t";
+  std::cout << "time";
   for (auto i = 0; i < specieses.size(); i++) {
     auto species = specieses[i];
     std::cout << "," << species.getId();
@@ -81,7 +81,7 @@ void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfi
 
   // print header
   std::vector<SpeciesWrapper> specieses = model->getSpecieses();
-  std::cout << "t";
+  std::cout << "time";
   for (auto i = 0; i < specieses.size(); i++) {
     auto species = specieses[i];
     std::cout << "," << species.getId();
@@ -102,7 +102,7 @@ void SBMLSim::simulateRungeKuttaFehlberg78(const ModelWrapper *model, const RunC
 
   // print header
   std::vector<SpeciesWrapper> specieses = model->getSpecieses();
-  std::cout << "t";
+  std::cout << "time";
   for (auto i = 0; i < specieses.size(); i++) {
     auto species = specieses[i];
     std::cout << "," << species.getId();
@@ -125,7 +125,7 @@ void SBMLSim::simulateRosenbrock4(const ModelWrapper *model, const RunConfigurat
 
   // print header
   std::vector<SpeciesWrapper> specieses = model->getSpecieses();
-  std::cout << "t";
+  std::cout << "time";
   for (auto i = 0; i < specieses.size(); i++) {
     auto species = specieses[i];
     std::cout << "," << species.getId();
