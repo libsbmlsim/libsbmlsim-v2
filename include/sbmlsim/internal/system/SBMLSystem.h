@@ -24,6 +24,7 @@ class SBMLSystem {
   double evaluateASTNode(const ASTNode *node, int reactionIndex, const state &x);
   double evaluateNameNode(const ASTNode *node, int reactionIndex, const state &x);
   double evaluateFunctionNode(const ASTNode *node, int reactionIndex, const state &x);
+  double evaluateFactorialNode(const ASTNode *node, int reactionIndex, const state &x);
   bool evaluateTriggerNode(const ASTNode *trigger, const state &x);
   int getIndexForSpecies(const std::string &speciesId);
 };

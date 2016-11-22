@@ -1,6 +1,7 @@
 #include "sbmlsim/internal/system/SBMLSystem.h"
 #include <algorithm>
 #include <cmath>
+#include "sbmlsim/internal/util/MathUtil.h"
 
 #define UNDEFINED_SPECIES_INDEX -1
 #define UNDEFINED_REACTION_INDEX -1
@@ -142,6 +143,10 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const
       return node->getReal();
     case AST_INTEGER:
       return node->getInteger();
+    case AST_FUNCTION_FACTORIAL:
+      return evaluateFactorialNode(node, reactionIndex, x);
+    case AST_FUNCTION_CEILING:
+      return MathUtil::ceil(evaluateASTNode(node->getLeftChild(), reactionIndex, x));
     default:
       std::cout << "type = " << type << std::endl;
       break;
@@ -211,6 +216,23 @@ double SBMLSystem::evaluateFunctionNode(const ASTNode *node, int reactionIndex, 
       delete body;
       return value;
     }
+  }
+
+  // not reachable
+  return 0.0;
+}
+
+double SBMLSystem::evaluateFactorialNode(const ASTNode *node, int reactionIndex, const state &x) {
+  const ASTNode *left = node->getLeftChild();
+  long long leftValue;
+  ASTNodeType_t leftType = left->getType();
+  switch (leftType) {
+    case AST_FUNCTION_CEILING:
+      leftValue = MathUtil::ceil(evaluateASTNode(left->getLeftChild(), reactionIndex, x));
+      return MathUtil::factorial(leftValue);
+    default:
+      std::cout << "type = " << leftType << std::endl;
+      break;
   }
 
   // not reachable
