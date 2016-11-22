@@ -8,8 +8,8 @@ FunctionDefinitionWrapper::FunctionDefinitionWrapper(const FunctionDefinition *f
     auto argument = functionDefinition->getArgument(i);
     auto type = argument->getType();
     switch (type) {
-      case AST_QUALIFIER_BVAR:
-        this->arguments.push_back(argument->getChild(0)->getName());
+      case AST_NAME:
+        this->arguments.push_back(argument->getName());
         break;
       default:
         std::cout << "type = " << type << std::endl;
