@@ -24,13 +24,9 @@ endif()
 
 # test: testintegrator
 if (PYTHONINTERP_FOUND)
-  #add_test(
-  #NAME TestIntegrator1
-  #COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/batchTest.py 1-1
-  #)
 add_test(
-  NAME TestIntegrator6
-  COMMAND ${PYTHON_EXECUTABLE} $<TARGET_FILE_DIR:testintegrator>/batchTest.py 6-6
+  NAME TestIntegrator
+  COMMAND ${PYTHON_EXECUTABLE} $<TARGET_FILE_DIR:testintegrator>/batchTest.py 1-25
   )
 endif()
 
