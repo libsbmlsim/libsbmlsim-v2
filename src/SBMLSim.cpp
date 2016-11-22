@@ -6,7 +6,6 @@
 #include "sbmlsim/internal/system/SBMLSystemJacobi.h"
 #include "sbmlsim/internal/integrate/IntegrateConst.h"
 #include "sbmlsim/internal/observer/StdoutCsvObserver.h"
-#include "sbmlsim/internal/util/DevUtil.h"
 
 using namespace boost::numeric;
 using state = SBMLSystem::state;
@@ -20,15 +19,16 @@ void SBMLSim::simulate(const std::string &filepath, const RunConfiguration &conf
 
 void SBMLSim::simulate(const SBMLDocument *document, const RunConfiguration &conf) {
   const Model *model = document->getModel();
-  const Model *clonedModel = model->clone();
-  simulate(clonedModel, conf);
-  delete clonedModel;
+  simulate(model, conf);
 }
 
 void SBMLSim::simulate(const Model *model, const RunConfiguration &conf) {
-  DevUtil::dumpSBMLDocument(model->getSBMLDocument());
+  Model *clonedModel = model->clone();
+  SBMLDocument *dummyDocument = new SBMLDocument();
+  clonedModel->setSBMLDocument(dummyDocument);
+  dummyDocument->setModel(clonedModel);
 
-  ModelWrapper *modelWrapper = new ModelWrapper(model);
+  ModelWrapper *modelWrapper = new ModelWrapper(clonedModel);
 
   // simulateRungeKutta4(modelWrapper, conf);
   // simulateRungeKuttaDopri5(modelWrapper, conf);
@@ -36,6 +36,7 @@ void SBMLSim::simulate(const Model *model, const RunConfiguration &conf) {
   // simulateRosenbrock4(modelWrapper, conf);
 
   delete modelWrapper;
+  delete dummyDocument;
 }
 
 state createInitialState(const ModelWrapper *model) {
@@ -45,8 +46,8 @@ state createInitialState(const ModelWrapper *model) {
   state initialState(numSpecies);
   for (auto i = 0; i < numSpecies; i++) {
     auto species = specieses[i];
-    auto value = species.getInitialValue();
-    initialState[i] = value;
+    auto amountValue = species.getInitialAmountValue();
+    initialState[i] = amountValue;
   }
 
   return initialState;

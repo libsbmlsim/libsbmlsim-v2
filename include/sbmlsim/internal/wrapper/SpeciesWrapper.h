@@ -12,28 +12,23 @@ class SpeciesWrapper {
   SpeciesWrapper(const SpeciesWrapper &species);
   ~SpeciesWrapper();
   const std::string &getId() const;
-  void setValue(double value);
-  double getValue() const;
-  double getInitialValue() const;
-  bool isAmountValue() const;
-  bool isConcentrationValue() const;
+  void setAmountValue(double amountValue);
+  double getAmountValue() const;
+  double getInitialAmountValue() const;
+  const std::string &getCompartmentId() const;
   bool hasOnlySubstanceUnits() const;
   bool hasBoundaryCondition() const;
   bool isConstant() const;
+  bool shouldDivideByCompartmentSize() const;
  private:
   std::string id;
-  double value;
-  double initialValue;
-  SpeciesValueType valueType;
+  double amountValue;
+  double initialAmountValue;
+  std::string compartmentId;
   bool substanceUnitsOnly;
   bool boundaryCondition;
   bool constant;
-};
-
-enum class SpeciesValueType {
-  UNKNOWN,
-  AMOUNT,
-  CONCENTRATION
+  bool divideByCompartmentSize;
 };
 
 #endif /* INCLUDE_SBMLSIM_INTERNAL_WRAPPER_SPECIESWRAPPER_H_ */

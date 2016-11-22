@@ -2,29 +2,25 @@
 
 SpeciesWrapper::SpeciesWrapper(const Species *species) {
   this->id = species->getId();
-  this->substanceUnitsOnly = species->getHasOnlySubstanceUnits();
-  this->valueType = SpeciesValueType::UNKNOWN;
+
+  const Model *model = species->getModel();
+  const std::string &compartmentId = species->getCompartment();
+  const Compartment *compartment = model->getCompartment(compartmentId);
+  this->compartmentId = compartment->getId();
 
   if (species->isSetInitialAmount()) {
-    this->valueType = SpeciesValueType::AMOUNT;
-    this->initialValue = species->getInitialAmount();
+    this->initialAmountValue = species->getInitialAmount();
   } else if (species->isSetInitialConcentration()) {
-    this->valueType = SpeciesValueType::CONCENTRATION;
-    this->initialValue = species->getInitialConcentration();
-  } else {
-    this->initialValue = 0.0;
-
-    const Model *model = species->getModel();
-    const std::string &compartmentId = species->getCompartment();
-    const Compartment *compartment = model->getCompartment(compartmentId);
-    unsigned int spatialDimensions = compartment->getSpatialDimensions();
-
-    if (this->substanceUnitsOnly || spatialDimensions == 0) {
-      this->valueType = SpeciesValueType::AMOUNT;
-    } else {
-      this->valueType = SpeciesValueType::CONCENTRATION;
+    double compartmentSize = 1.0;
+    if (compartment->isSetSize()) {
+      compartmentSize = compartment->getSize();
     }
+    this->initialAmountValue = species->getInitialConcentration() * compartmentSize;
+  } else {
+    this->initialAmountValue = 0.0;
   }
+
+  this->amountValue = this->initialAmountValue;
 
   if (species->isSetBoundaryCondition()) {
     this->boundaryCondition = species->getBoundaryCondition();
@@ -38,17 +34,24 @@ SpeciesWrapper::SpeciesWrapper(const Species *species) {
     this->constant = false;
   }
 
-  this->value = this->initialValue;
+  this->substanceUnitsOnly = species->getHasOnlySubstanceUnits();
+  if (!this->substanceUnitsOnly &&
+      (!compartment->isSetSpatialDimensions() || compartment->getSpatialDimensions() > 0)) {
+    this->divideByCompartmentSize = true;
+  } else {
+    this->divideByCompartmentSize = false;
+  }
 }
 
 SpeciesWrapper::SpeciesWrapper(const SpeciesWrapper &species) {
   this->id = species.id;
-  this->initialValue = species.initialValue;
-  this->value = species.value;
-  this->valueType = species.valueType;
+  this->initialAmountValue = species.initialAmountValue;
+  this->amountValue = species.amountValue;
+  this->compartmentId = species.compartmentId;
   this->substanceUnitsOnly = species.substanceUnitsOnly;
   this->boundaryCondition = species.boundaryCondition;
   this->constant = species.constant;
+  this->divideByCompartmentSize = species.divideByCompartmentSize;
 }
 
 SpeciesWrapper::~SpeciesWrapper() {
@@ -59,24 +62,20 @@ const std::string &SpeciesWrapper::getId() const {
   return this->id;
 }
 
-void SpeciesWrapper::setValue(double value) {
-  this->value = value;
+void SpeciesWrapper::setAmountValue(double amountValue) {
+  this->amountValue = amountValue;
 }
 
-double SpeciesWrapper::getValue() const {
-  return this->value;
+double SpeciesWrapper::getAmountValue() const {
+  return this->amountValue;
 }
 
-double SpeciesWrapper::getInitialValue() const {
-  return this->initialValue;
+double SpeciesWrapper::getInitialAmountValue() const {
+  return this->initialAmountValue;
 }
 
-bool SpeciesWrapper::isAmountValue() const {
-  return this->valueType == SpeciesValueType::AMOUNT;
-}
-
-bool SpeciesWrapper::isConcentrationValue() const {
-  return this->valueType == SpeciesValueType::CONCENTRATION;
+const std::string &SpeciesWrapper::getCompartmentId() const {
+  return this->compartmentId;
 }
 
 bool SpeciesWrapper::hasOnlySubstanceUnits() const {
@@ -89,4 +88,8 @@ bool SpeciesWrapper::hasBoundaryCondition() const {
 
 bool SpeciesWrapper::isConstant() const {
   return this->constant;
+}
+
+bool SpeciesWrapper::shouldDivideByCompartmentSize() const {
+  return this->divideByCompartmentSize;
 }

@@ -3,7 +3,9 @@
 ModelWrapper::ModelWrapper(const Model *model) {
   // species
   for (auto i = 0; i < model->getNumSpecies(); i++) {
-    auto species = model->getSpecies(i);
+    const ListOfSpecies *speciesList = model->getListOfSpecies();
+    //const Species *species = model->getSpecies(i);
+    auto species = speciesList->get(i);
     this->specieses.push_back(SpeciesWrapper(species));
   }
 

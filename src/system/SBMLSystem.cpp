@@ -156,7 +156,16 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
   auto specieses = model->getSpecieses();
   for (auto i = 0; i < specieses.size(); i++) {
     if (name == specieses[i].getId()) {
-      return x[i];
+      if (specieses[i].shouldDivideByCompartmentSize()) {
+        auto compartments = model->getCompartments();
+        for (auto j = 0; j < compartments.size(); j++) {
+          if (specieses[i].getCompartmentId() == compartments[j].getId()) {
+            return x[i] / compartments[j].getValue();
+          }
+        }
+      } else {
+        return x[i];
+      }
     }
   }
 
