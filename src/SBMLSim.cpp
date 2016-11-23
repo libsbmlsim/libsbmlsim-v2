@@ -31,8 +31,8 @@ void SBMLSim::simulate(const Model *model, const RunConfiguration &conf) {
   ModelWrapper *modelWrapper = new ModelWrapper(clonedModel);
 
   // simulateRungeKutta4(modelWrapper, conf);
-  // simulateRungeKuttaDopri5(modelWrapper, conf);
-  simulateRungeKuttaFehlberg78(modelWrapper, conf);
+  simulateRungeKuttaDopri5(modelWrapper, conf);
+  // simulateRungeKuttaFehlberg78(modelWrapper, conf);
   // simulateRosenbrock4(modelWrapper, conf);
 
   delete modelWrapper;
@@ -90,8 +90,8 @@ void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfi
   std::cout << std::endl;
 
   // integrate
-  integrate_const(stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(),
-                  std::ref(observer));
+  sbmlsim::integrate_const(
+      stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), std::ref(observer));
 }
 
 void SBMLSim::simulateRungeKuttaFehlberg78(const ModelWrapper *model, const RunConfiguration &conf) {
