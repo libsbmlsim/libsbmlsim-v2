@@ -208,6 +208,8 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const
       return node->getReal();
     case AST_INTEGER:
       return node->getInteger();
+    case AST_RATIONAL:
+      return node->getValue();
     case AST_FUNCTION_FACTORIAL:
       return evaluateFactorialNode(node, reactionIndex, x);
     case AST_FUNCTION_CEILING:
