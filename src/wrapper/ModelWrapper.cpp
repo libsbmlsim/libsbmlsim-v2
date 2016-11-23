@@ -54,6 +54,15 @@ ModelWrapper::ModelWrapper(const Model *model) {
     auto initialAssignment = model->getInitialAssignment(i);
     this->initialAssignments.push_back(new InitialAssignmentWrapper(initialAssignment));
   }
+
+  // rules
+  for (auto i = 0; i < model->getNumRules(); i++) {
+    auto rule = model->getRule(i);
+    if (rule->isAssignment()) {
+      const AssignmentRule *assignmentRule = static_cast<const AssignmentRule *>(rule);
+      this->assignmentRules.push_back(new AssignmentRuleWrapper(assignmentRule));
+    }
+  }
 }
 
 ModelWrapper::ModelWrapper(const ModelWrapper &model) {
@@ -64,6 +73,7 @@ ModelWrapper::ModelWrapper(const ModelWrapper &model) {
   this->functionDefinitions = model.functionDefinitions;
   this->events = model.events;
   this->initialAssignments = model.initialAssignments;
+  this->assignmentRules = model.assignmentRules;
 }
 
 ModelWrapper::~ModelWrapper() {
@@ -82,6 +92,11 @@ ModelWrapper::~ModelWrapper() {
     delete initialAssignment;
   }
   this->initialAssignments.clear();
+
+  for (auto assignmentRule : this->assignmentRules) {
+    delete assignmentRule;
+  }
+  this->assignmentRules.clear();
 }
 
 const std::vector<SpeciesWrapper> &ModelWrapper::getSpecieses() const {
@@ -110,4 +125,8 @@ std::vector<EventWrapper *> &ModelWrapper::getEvents() {
 
 std::vector<InitialAssignmentWrapper *> &ModelWrapper::getInitialAssignments() {
   return this->initialAssignments;
+}
+
+std::vector<AssignmentRuleWrapper *> &ModelWrapper::getAssignmentRules() {
+  return this->assignmentRules;
 }

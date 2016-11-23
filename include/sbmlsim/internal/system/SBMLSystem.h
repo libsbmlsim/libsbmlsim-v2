@@ -19,6 +19,10 @@ class SBMLSystem {
   void handleReaction(const state &x, state &dxdt, double t);
   void handleEvent(state &x, double t);
   void handleInitialAssignment(state &x, double t);
+  void handleRule(state &x, double t);
+  void handleAlgebraicRule(state &x, double t);
+  void handleAssignmentRule(state &x, double t);
+  void handleRateRule(state &x, double t);
  private:
   ModelWrapper *model;
   double evaluateASTNode(const ASTNode *node, int reactionIndex, const state &x);

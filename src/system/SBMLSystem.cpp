@@ -79,6 +79,10 @@ void SBMLSystem::handleEvent(state &x, double t) {
 }
 
 void SBMLSystem::handleInitialAssignment(state &x, double t) {
+  if (t > 0) {
+    return;
+  }
+
   for (auto initialAssignment : model->getInitialAssignments()) {
     auto symbol = initialAssignment->getSymbol();
     auto value = evaluateASTNode(initialAssignment->getMath(), UNDEFINED_REACTION_INDEX, x);
@@ -107,6 +111,52 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
       }
     }
   }
+}
+
+void SBMLSystem::handleRule(state &x, double t) {
+  this->handleAlgebraicRule(x, t);
+  this->handleAssignmentRule(x, t);
+  this->handleRateRule(x, t);
+}
+
+void SBMLSystem::handleAlgebraicRule(state &x, double t) {
+  // TODO
+}
+
+void SBMLSystem::handleAssignmentRule(state &x, double t) {
+  auto &assignmentRules = this->model->getAssignmentRules();
+  for (auto i = 0; i < assignmentRules.size(); i++) {
+    auto &variable = assignmentRules[i]->getVariable();
+    auto value = evaluateASTNode(assignmentRules[i]->getMath(), UNDEFINED_REACTION_INDEX, x);
+
+    // species
+    auto specieses = model->getSpecieses();
+    for (auto i = 0; i < specieses.size(); i++) {
+      if (variable == specieses[i].getId()) {
+        x[i] = value;
+      }
+    }
+
+    // compartment
+    auto compartments = model->getCompartments();
+    for (auto i = 0; i < compartments.size(); i++) {
+      if (variable == compartments[i].getId()) {
+        compartments[i].setValue(value);
+      }
+    }
+
+    // global parameter
+    auto parameters = model->getParameters();
+    for (auto i = 0; i < parameters.size(); i++) {
+      if (parameters[i].isGlobalParameter() && variable == parameters[i].getId()) {
+        parameters[i].setValue(value);
+      }
+    }
+  }
+}
+
+void SBMLSystem::handleRateRule(state &x, double t) {
+  // TODO
 }
 
 double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const state& x) {

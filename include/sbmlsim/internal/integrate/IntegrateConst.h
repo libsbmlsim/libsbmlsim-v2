@@ -22,6 +22,12 @@ size_t integrate_const_detail(
   int step = 0;
 
   while (odeint::detail::less_eq_with_sign(time + time_step, end_time, dt)) {
+    // rules
+    system.handleRule(start_state, time);
+
+    // initial assignments
+    system.handleInitialAssignment(start_state, time);
+
     obs(start_state, time);
     // integrate_adaptive_checked uses the given checker to throw if an overflow occurs
     real_steps += odeint::detail::integrate_adaptive(stepper, system, start_state, time,
@@ -33,6 +39,7 @@ size_t integrate_const_detail(
     step++;
     time = start_time + static_cast< typename odeint::unit_value_type<double>::type >(step) * time_step;
 
+    // event
     system.handleEvent(start_state, time);
   }
   obs(start_state, time);
