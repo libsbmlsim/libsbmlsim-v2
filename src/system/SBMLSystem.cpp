@@ -235,7 +235,7 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
     }
   }
 
-  // parameter
+  // local parameter
   if (reactionIndex != UNDEFINED_REACTION_INDEX) {
     auto reactionId = model->getReactions().at(reactionIndex).getId();
     auto parameters = model->getParameters();
@@ -246,10 +246,13 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
         return parameters[i].getValue();
       }
     }
-    for (auto i = 0; i < parameters.size(); i++) {
-      if (parameters[i].isGlobalParameter() && name == parameters[i].getId()) {
-        return parameters[i].getValue();
-      }
+  }
+
+  // global parameter
+  auto parameters = model->getParameters();
+  for (auto i = 0; i < parameters.size(); i++) {
+    if (parameters[i].isGlobalParameter() && name == parameters[i].getId()) {
+      return parameters[i].getValue();
     }
   }
 
