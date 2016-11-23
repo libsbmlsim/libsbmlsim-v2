@@ -20,7 +20,7 @@ ModelWrapper::ModelWrapper(const Model *model) {
     auto reaction = model->getReaction(i);
     auto kineticLaw = reaction->getKineticLaw();
     for (auto j = 0; j < kineticLaw->getNumParameters(); j++) {
-      auto parameter = kineticLaw->getParameter(i);
+      auto parameter = kineticLaw->getParameter(j);
       this->parameters.push_back(ParameterWrapper::asLocalParameter(parameter, reaction));
     }
   }
