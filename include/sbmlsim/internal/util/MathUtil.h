@@ -9,7 +9,7 @@ class MathUtil {
   static double factorial(unsigned long long n);
   static long long ceil(double f);
   static bool containsTarget(const ASTNode *ast, std::string target);
-  static ASTNode* simplify(ASTNode *ast);
+  static ASTNode* simplify(const ASTNode *ast);
   static ASTNode* differentiate(const ASTNode *ast, std::string target);
  private:
   MathUtil() {}

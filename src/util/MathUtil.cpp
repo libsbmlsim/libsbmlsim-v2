@@ -29,182 +29,181 @@ long long MathUtil::ceil(double f) {
   return ::ceil(f);
 }
 
-/*
 ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
   ASTNodeType_t type = ast->getType();
   ASTNode *tmp = new ASTNode();
   ASTNode *tmp2, *tmp3;
   ASTNode *left, *right;
+  ASTNode *ll, *lr;
 
   if (containsTarget(ast, target) == 0) {
-    ASTNode_setType(tmp, AST_INTEGER);
-    ASTNode_setInteger(tmp, 0);
+    tmp->setType(AST_INTEGER);
+    tmp->setValue(0);
     return tmp;
   }
 
   switch (type) {
-    case AST_PLUS :
-      ASTNode_setType(tmp, AST_PLUS);
-      ASTNode_addChild(tmp, differentiate(ASTNode_getLeftChild(ast), target));
-      ASTNode_addChild(tmp, differentiate(ASTNode_getRightChild(ast), target));
+    case AST_PLUS:
+      tmp->setType(AST_PLUS);
+      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      tmp->addChild(differentiate(ast->getRightChild(), target));
       break;
-    case AST_MINUS :
-      ASTNode_setType(tmp, AST_MINUS);
-      ASTNode_addChild(tmp, differentiate(ASTNode_getLeftChild(ast), target));
-      ASTNode_addChild(tmp, differentiate(ASTNode_getRightChild(ast), target));
+    case AST_MINUS:
+      tmp->setType(AST_MINUS);
+      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      tmp->addChild(differentiate(ast->getRightChild(), target));
       break;
-    case AST_TIMES :
-      ASTNode_setType(tmp, AST_PLUS);
-      left = ASTNode_createWithType(AST_TIMES);
-      ASTNode_addChild(left, differentiate(ASTNode_getLeftChild(ast), target));
-      ASTNode_addChild(left, ASTNode_deepCopy(ASTNode_getRightChild(ast)));
-      ASTNode_addChild(tmp, left);
-      right = ASTNode_createWithType(AST_TIMES);
-      ASTNode_addChild(right, ASTNode_deepCopy(ASTNode_getLeftChild(ast)));
-      ASTNode_addChild(right, differentiate(ASTNode_getRightChild(ast), target));
-      ASTNode_addChild(tmp, right);
+    case AST_TIMES:
+      tmp->setType(AST_PLUS);
+      left = new ASTNode(AST_TIMES);
+      left->addChild(differentiate(ast->getLeftChild(), target));
+      left->addChild(ast->getRightChild()->deepCopy());
+      tmp->addChild(left);
+      right = new ASTNode(AST_TIMES);
+      right->addChild(ast->getLeftChild()->deepCopy());
+      right->addChild(differentiate(ast->getRightChild(), target));
+      tmp->addChild(right);
       break;
-    case AST_DIVIDE :
-      ASTNode_setType(tmp, AST_DIVIDE);
-      if (containsTarget(ASTNode_getRightChild(ast), target) == 0) {
-        ASTNode_addChild(tmp, differentiate(ASTNode_getLeftChild(ast),target));
-        ASTNode_addChild(tmp, ASTNode_deepCopy(ASTNode_getRightChild(ast)));
+    case AST_DIVIDE:
+      tmp->setType(AST_DIVIDE);
+      if (containsTarget(ast->getRightChild(), target) == 0) {
+        tmp->addChild(differentiate(ast->getLeftChild(),target));
+        tmp->addChild(ast->getRightChild()->deepCopy());
         break;
       }
-      left = ASTNode_createWithType(AST_MINUS);
-      ASTNode_t *ll = ASTNode_createWithType(AST_TIMES);
-      ASTNode_t *lr = ASTNode_createWithType(AST_TIMES);
-      ASTNode_addChild(ll, differentiate(ASTNode_getLeftChild(ast), target));
-      ASTNode_addChild(ll, ASTNode_deepCopy(ASTNode_getRightChild(ast)));
-      ASTNode_addChild(lr, ASTNode_deepCopy(ASTNode_getLeftChild(ast)));
-      ASTNode_addChild(lr, differentiate(ASTNode_getRightChild(ast), target));
-      ASTNode_addChild(left, ll);
-      ASTNode_addChild(left, lr);
-      ASTNode_addChild(tmp, left);
-      right = ASTNode_createWithType(AST_FUNCTION_POWER);
-      ASTNode_addChild(right, ASTNode_deepCopy(ASTNode_getRightChild(ast)));
-      tmp2 = ASTNode_createWithType(AST_INTEGER);
-      ASTNode_setInteger(tmp2, 2);
-      ASTNode_addChild(right, tmp2);
-      ASTNode_addChild(tmp, right);
+      left = new ASTNode(AST_MINUS);
+      ll = new ASTNode(AST_TIMES);
+      lr = new ASTNode(AST_TIMES);
+      ll->addChild(differentiate(ast->getLeftChild(), target));
+      ll->addChild(ast->getRightChild()->deepCopy());
+      lr->addChild(ast->getLeftChild()->deepCopy());
+      lr->addChild(differentiate(ast->getRightChild(), target));
+      left->addChild(ll);
+      left->addChild(lr);
+      tmp->addChild(left);
+      right = new ASTNode(AST_FUNCTION_POWER);
+      right->addChild(ast->getRightChild()->deepCopy());
+      tmp2 = new ASTNode(AST_INTEGER);
+      tmp2->setValue(2);
+      right->addChild(tmp2);
+      tmp->addChild(right);
       break;
-    case AST_FUNCTION_POWER :
-    case AST_POWER :
-      ASTNode_setType(tmp, AST_TIMES);
-      left = ASTNode_createWithType(AST_TIMES);
-      ASTNode_addChild(left, ASTNode_deepCopy(ASTNode_getRightChild(ast)));
-      ASTNode_addChild(left, differentiate(ASTNode_getLeftChild(ast), target));
-      ASTNode_addChild(tmp, left);
-      tmp3 = ASTNode_createWithType(AST_FUNCTION_POWER);
-      ASTNode_addChild(tmp3, ASTNode_deepCopy(ASTNode_getLeftChild(ast)));
-      right = ASTNode_createWithType(AST_MINUS);
-      ASTNode_addChild(right, ASTNode_deepCopy(ASTNode_getRightChild(ast)));
-      tmp2 = ASTNode_createWithType(AST_INTEGER);
-      ASTNode_setInteger(tmp2, 1);
-      ASTNode_addChild(right, tmp2);
-      ASTNode_addChild(tmp3, right);
-      ASTNode_addChild(tmp, tmp3);
+    case AST_FUNCTION_POWER:
+    case AST_POWER:
+      tmp->setType(AST_TIMES);
+      left = new ASTNode(AST_TIMES);
+      left->addChild(ast->getRightChild()->deepCopy());
+      left->addChild(differentiate(ast->getLeftChild(), target));
+      tmp->addChild(left);
+      tmp3 = new ASTNode(AST_FUNCTION_POWER);
+      tmp3->addChild(ast->getLeftChild()->deepCopy());
+      right = new ASTNode(AST_MINUS);
+      right->addChild(ast->getRightChild()->deepCopy());
+      tmp2 = new ASTNode(AST_INTEGER);
+      tmp2->setValue(1);
+      right->addChild(tmp2);
+      tmp3->addChild(right);
+      tmp->addChild(tmp3);
       break;
-    case AST_FUNCTION_ROOT :
-      ASTNode_setType(tmp, AST_TIMES);
-      ASTNode_addChild(tmp, differentiate(ASTNode_getLeftChild(ast), target));
-      right = ASTNode_createWithType(AST_TIMES);
-      tmp2 = ASTNode_createWithType(AST_REAL);
-      ASTNode_setReal(tmp2, 0.5);
-      ASTNode_addChild(right, tmp2);
-      tmp2 = ASTNode_createWithType(AST_FUNCTION_POWER);
-      ASTNode_addChild(tmp2, ASTNode_deepCopy(ASTNode_getLeftChild(ast)));
-      tmp3 = ASTNode_createWithType(AST_REAL);
-      ASTNode_setReal(tmp3, -0.5);
-      ASTNode_addChild(tmp2, tmp3);
-      ASTNode_addChild(right, tmp2);
+    case AST_FUNCTION_ROOT:
+      tmp->setType(AST_TIMES);
+      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      right = new ASTNode(AST_TIMES);
+      tmp2 = new ASTNode(AST_REAL);
+      tmp2->setValue(0.5);
+      right->addChild(tmp2);
+      tmp2 = new ASTNode(AST_FUNCTION_POWER);
+      tmp2->addChild(ast->getLeftChild()->deepCopy());
+      tmp3 = new ASTNode(AST_REAL);
+      tmp3->setValue(-0.5);
+      tmp2->addChild(tmp3);
+      right->addChild(tmp2);
       break;
-    case AST_FUNCTION_SIN :
-      ASTNode_setType(tmp, AST_TIMES);
-      ASTNode_addChild(tmp, differentiate(ASTNode_getLeftChild(ast), target));
-      right = ASTNode_createWithType(AST_FUNCTION_COS);
-      ASTNode_addChild(right, ASTNode_deepCopy(ASTNode_getLeftChild(ast)));
-      ASTNode_addChild(tmp, right);
+    case AST_FUNCTION_SIN:
+      tmp->setType(AST_TIMES);
+      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      right = new ASTNode(AST_FUNCTION_COS);
+      right->addChild(ast->getLeftChild()->deepCopy());
+      tmp->addChild(right);
       break;
-    case AST_FUNCTION_COS :
-      ASTNode_setType(tmp, AST_TIMES);
-      left = ASTNode_createWithType(AST_TIMES);
-      tmp2 = ASTNode_createWithType(AST_INTEGER);
-      ASTNode_setInteger(tmp2, -1);
-      ASTNode_addChild(left, tmp2);
-      ASTNode_addChild(left, differentiate(ASTNode_getLeftChild(ast), target));
-      ASTNode_addChild(tmp, left);
-      right = ASTNode_createWithType(AST_FUNCTION_SIN);
-      ASTNode_addChild(right, ASTNode_deepCopy(ASTNode_getLeftChild(ast)));
-      ASTNode_addChild(tmp, right);
+    case AST_FUNCTION_COS:
+      tmp->setType(AST_TIMES);
+      left = new ASTNode(AST_TIMES);
+      tmp2 = new ASTNode(AST_INTEGER);
+      tmp2->setValue(-1);
+      left->addChild(tmp2);
+      left->addChild(differentiate(ast->getLeftChild(), target));
+      tmp->addChild(left);
+      right = new ASTNode(AST_FUNCTION_SIN);
+      right->addChild(ast->getLeftChild()->deepCopy());
+      tmp->addChild(right);
       break;
-    case AST_FUNCTION_TAN :
-      ASTNode_setType(tmp, AST_TIMES);
-      ASTNode_addChild(tmp, differentiate(ASTNode_getLeftChild(ast), target));
-      right = ASTNode_createWithType(AST_PLUS);
-      tmp2 = ASTNode_createWithType(AST_INTEGER);
-      ASTNode_setInteger(tmp2, 1);
-      ASTNode_addChild(right, tmp2);
-      tmp2 = ASTNode_createWithType(AST_FUNCTION_POWER);
-      tmp3 = ASTNode_createWithType(AST_FUNCTION_TAN);
-      ASTNode_addChild(tmp3, ASTNode_deepCopy(ASTNode_getLeftChild(ast)));
-      ASTNode_addChild(tmp2, tmp3);
-      tmp3 = ASTNode_createWithType(AST_INTEGER);
-      ASTNode_setInteger(tmp3, 2);
-      ASTNode_addChild(tmp2, tmp3);
-      ASTNode_addChild(right, tmp2);
+    case AST_FUNCTION_TAN:
+      tmp->setType(AST_TIMES);
+      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      right = new ASTNode(AST_PLUS);
+      tmp2 = new ASTNode(AST_INTEGER);
+      tmp2->setValue(1);
+      right->addChild(tmp2);
+      tmp2 = new ASTNode(AST_FUNCTION_POWER);
+      tmp3 = new ASTNode(AST_FUNCTION_TAN);
+      tmp3->addChild(ast->getLeftChild()->deepCopy());
+      tmp2->addChild(tmp3);
+      tmp3 = new ASTNode(AST_INTEGER);
+      tmp3->setValue(2);
+      tmp2->addChild(tmp3);
+      right->addChild(tmp2);
       break;
-    case AST_FUNCTION_SINH :
-      ASTNode_setType(tmp, AST_TIMES);
-      ASTNode_addChild(tmp, differentiate(ASTNode_getLeftChild(ast), target));
-      right = ASTNode_createWithType(AST_FUNCTION_COSH);
-      ASTNode_addChild(right, ASTNode_deepCopy(ASTNode_getLeftChild(ast)));
-      ASTNode_addChild(tmp, right);
+    case AST_FUNCTION_SINH:
+      tmp->setType(AST_TIMES);
+      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      right = new ASTNode(AST_FUNCTION_COSH);
+      right->addChild(ast->getLeftChild()->deepCopy());
+      tmp->addChild(right);
       break;
-    case AST_FUNCTION_COSH :
-      ASTNode_setType(tmp, AST_TIMES);
-      ASTNode_addChild(tmp, differentiate(ASTNode_getLeftChild(ast), target));
-      right = ASTNode_createWithType(AST_FUNCTION_SINH);
-      ASTNode_addChild(right, ASTNode_deepCopy(ASTNode_getLeftChild(ast)));
-      ASTNode_addChild(tmp, right);
+    case AST_FUNCTION_COSH:
+      tmp->setType(AST_TIMES);
+      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      right = new ASTNode(AST_FUNCTION_SINH);
+      right->addChild(ast->getLeftChild()->deepCopy());
+      tmp->addChild(right);
       break;
-    case AST_FUNCTION_TANH :
-      ASTNode_setType(tmp, AST_TIMES);
-      ASTNode_addChild(tmp, differentiate(ASTNode_getLeftChild(ast), target));
-      right = ASTNode_createWithType(AST_DIVIDE);
-      tmp2 = ASTNode_createWithType(AST_INTEGER);
-      ASTNode_setInteger(tmp2, 1);
-      ASTNode_addChild(right, tmp2);
-      tmp2 = ASTNode_createWithType(AST_FUNCTION_POWER);
-      tmp3 = ASTNode_createWithType(AST_FUNCTION_COSH);
-      ASTNode_addChild(tmp3, ASTNode_deepCopy(ASTNode_getLeftChild(ast)));
-      ASTNode_addChild(tmp2, tmp3);
-      tmp3 = ASTNode_createWithType(AST_INTEGER);
-      ASTNode_setInteger(tmp3, 2);
-      ASTNode_addChild(tmp2, tmp3);
-      ASTNode_addChild(right, tmp2);
+    case AST_FUNCTION_TANH:
+      tmp->setType(AST_TIMES);
+      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      right = new ASTNode(AST_DIVIDE);
+      tmp2 = new ASTNode(AST_INTEGER);
+      tmp2->setValue(1);
+      right->addChild(tmp2);
+      tmp2 = new ASTNode(AST_FUNCTION_POWER);
+      tmp3 = new ASTNode(AST_FUNCTION_COSH);
+      tmp3->addChild(ast->getLeftChild()->deepCopy());
+      tmp2->addChild(tmp3);
+      tmp3 = new ASTNode(AST_INTEGER);
+      tmp3->setValue(2);
+      tmp2->addChild(tmp3);
+      right->addChild(tmp2);
       break;
-    case AST_REAL :
-    case AST_INTEGER :
-    case AST_NAME_TIME :
-      ASTNode_setType(tmp, AST_INTEGER);
-      ASTNode_setInteger(tmp, 0);
+    case AST_REAL:
+    case AST_INTEGER:
+    case AST_NAME_TIME:
+      tmp->setType(AST_INTEGER);
+      tmp->setValue(0);
       break;
-    case AST_NAME :
-      ASTNode_setType(tmp, AST_INTEGER);
-      if (strcmp(ASTNode_getName(ast), target) == 0) {
-        ASTNode_setInteger(tmp, 1);
+    case AST_NAME:
+      tmp->setType(AST_INTEGER);
+      if (ast->getName() == target) {
+        tmp->setValue(1);
       } else {
-        ASTNode_setInteger(tmp, 0);
+        tmp->setValue(0);
       }
       break;
-    default :
+    default:
       printf("unknown\n");
       exit(1);
   }
   return tmp;
 }
- */
 
 bool MathUtil::containsTarget(const ASTNode *ast, std::string target)
 {
@@ -224,10 +223,10 @@ bool MathUtil::containsTarget(const ASTNode *ast, std::string target)
   return found;
 }
 
-ASTNode* MathUtil::simplify(ASTNode *ast) {
+ASTNode* MathUtil::simplify(const ASTNode *ast) {
   ASTNodeType_t type = ast->getType();
   ASTNode *left, *right, *tmp;
-  long lval, rval;
+  long left_val, right_val;
 
   if ((!ast->isOperator()) && (type != AST_FUNCTION_POWER)) {
     return ast->deepCopy();
@@ -237,85 +236,116 @@ ASTNode* MathUtil::simplify(ASTNode *ast) {
   right = simplify(ast->getRightChild());
 
   switch (type) {
-    case AST_PLUS :
+    case AST_PLUS:
       if (left->isInteger()) {
-        lval = left->getInteger();
-        if (lval == 0) {
+        left_val = left->getInteger();
+        if (left_val == 0) {
           return right->deepCopy();
         } else if (right->isInteger()) {
-          rval   = right->getInteger();
+          right_val   = right->getInteger();
           tmp = new ASTNode(AST_INTEGER);
-          tmp->setValue(lval+rval);
+          tmp->setValue(left_val+right_val);
+          return tmp;
+        } else {  // left is an integer, right is not an integer (3 + x)
+          tmp = new ASTNode(AST_PLUS);
+          tmp->addChild(right->deepCopy());
+          tmp->addChild(left->deepCopy());
           return tmp;
         }
       }
       if (right->isInteger()) { // left isn't integer
-        rval = right->getInteger();
-        if (rval == 0) return left->deepCopy();
+        right_val = right->getInteger();
+        if (right_val == 0) {
+          return left->deepCopy();
+        }
       }
       break;
-    case AST_MINUS :
+    case AST_MINUS:
       if (right->isInteger()) {
-        rval = right->getInteger();
-        if (rval == 0) {
+        right_val = right->getInteger();
+        if (right_val == 0) {
           return left->deepCopy();
         } else if (left->isInteger()) {
-          lval   = left->getInteger();
+          left_val   = left->getInteger();
           tmp = new ASTNode(AST_INTEGER);
-          tmp->setValue(lval-rval);
+          tmp->setValue(left_val-right_val);
           return tmp;
         }
       }
       break;
-    case AST_TIMES :
+    case AST_TIMES:
       if (left->isInteger()) {
-        lval = left->getInteger();
-        if (lval == 0) {
+        left_val = left->getInteger();
+        if (left_val == 0) {
           tmp = new ASTNode(AST_INTEGER);
           tmp->setValue(0);
           return tmp;
-        } else if (lval == 1) {
+        } else if (left_val == 1) {
           return right->deepCopy();
         } else if (right->isInteger()) {
-          rval   = right->getInteger();
+          right_val   = right->getInteger();
           tmp = new ASTNode(AST_INTEGER);
-          tmp->setValue(lval*rval);
+          tmp->setValue(left_val*right_val);
           return tmp;
         }
       }
       if (right->isInteger()) { // left isn't integer
-        rval = right->getInteger();
-        if (rval == 0) {
+        right_val = right->getInteger();
+        if (right_val == 0) {
           tmp = new ASTNode(AST_INTEGER);
           tmp->setValue(0);
           return tmp;
-        } else if (rval == 1) {
+        } else if (right_val == 1) {
           return left->deepCopy();
+        } else {   // left is not an integer, right is an integer. (x * 2)
+          tmp = new ASTNode(AST_TIMES);
+          tmp->addChild(right->deepCopy());
+          tmp->addChild(left->deepCopy());
+          return tmp;
         }
       }
       break; // can't simplify
-    case AST_DIVIDE :
+    case AST_DIVIDE:
       if (left->isInteger()) {
-        lval = left->getInteger();
-        if (lval == 0) {
+        left_val = left->getInteger();
+        if (left_val == 0) {
           tmp = new ASTNode(AST_INTEGER);
           tmp->setValue(0);
           return tmp;
         } else if (right->isInteger()) {
-          rval   = right->getInteger();
+          right_val   = right->getInteger();
           tmp = new ASTNode(AST_REAL);
-          tmp->setValue((double)lval/rval);
+          tmp->setValue((double)left_val/right_val);
           return tmp;
         }
       }
       if (right->isInteger()) { // left isn't integer
-        rval = right->getInteger();
-        if (rval == 1) {
+        right_val = right->getInteger();
+        if (right_val == 1) {
           return left->deepCopy();
         }
       }
       break; // can't simplify
-    default :
+    case AST_POWER:
+    case AST_FUNCTION_POWER:
+      if (right->isInteger()) {
+        right_val = right->getInteger();
+        if (right_val == 0) {
+          tmp = new ASTNode(AST_INTEGER);
+          tmp->setValue(1);
+          return tmp;
+        } else if (right_val == 1) {
+          return left->deepCopy();
+        }
+      }
+      if (type == AST_FUNCTION_POWER) { // convert pow(x, y) to x ^ y
+        tmp = new ASTNode(AST_POWER);
+        tmp->addChild(left->deepCopy());
+        tmp->addChild(right->deepCopy());
+        return tmp;
+      }
+      break; // can't simplify
+    default:
       break;
   }
   tmp = new ASTNode(type);
