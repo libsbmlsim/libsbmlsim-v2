@@ -28,7 +28,9 @@ size_t integrate_const_detail(
     // initial assignments
     system.handleInitialAssignment(start_state, time);
 
+    // observer
     obs(start_state, time);
+
     // integrate_adaptive_checked uses the given checker to throw if an overflow occurs
     real_steps += odeint::detail::integrate_adaptive(stepper, system, start_state, time,
                                                      time + time_step, dt,
@@ -42,6 +44,11 @@ size_t integrate_const_detail(
     // event
     system.handleEvent(start_state, time);
   }
+
+  // assignment rules
+  system.handleAssignmentRule(start_state, time);
+
+  // observer
   obs(start_state, time);
 
   return real_steps;
