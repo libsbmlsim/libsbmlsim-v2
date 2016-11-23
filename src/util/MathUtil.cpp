@@ -28,3 +28,7 @@ double MathUtil::factorial(unsigned long long n) {
 long long MathUtil::ceil(double f) {
   return ::ceil(f);
 }
+
+double MathUtil::pow(double x, double y) {
+  return ::pow(x, y);
+}

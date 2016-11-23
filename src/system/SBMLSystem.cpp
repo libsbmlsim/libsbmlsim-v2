@@ -189,7 +189,7 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const
     case AST_FUNCTION_POWER:
       left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
       right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
-      return std::pow(left, right);
+      return MathUtil::pow(left, right);
     case AST_FUNCTION:
       return evaluateFunctionNode(node, reactionIndex, x);
     case AST_REAL:

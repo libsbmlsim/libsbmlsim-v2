@@ -5,6 +5,7 @@ class MathUtil {
  public:
   static double factorial(unsigned long long n);
   static long long ceil(double f);
+  static double pow(double x, double y);
  private:
   MathUtil() {}
   ~MathUtil() {}
