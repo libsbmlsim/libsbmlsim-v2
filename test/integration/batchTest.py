@@ -60,6 +60,8 @@ array  =  subprocess.check_output(cmd, shell=True).splitlines()
 
 # check status
 failed = False
+if len(array) <= 0:
+  failed = False
 for line in array:
   line = line.replace('NoMatch', bcolors.bold + bcolors.red + 'NoMatch' + bcolors.endc) 
   line = line.replace(' Match',  bcolors.bold + bcolors.green + ' Match' + bcolors.endc) 
