@@ -11,7 +11,7 @@ ParameterWrapper::ParameterWrapper(const Parameter *parameter, const Reaction *r
   this->id = parameter->getId();
   this->reactionId = reaction->getId();
   this->value = parameter->getValue();
-  this->scope = ParameterScope::GLOBAL;
+  this->scope = ParameterScope::LOCAL;
 }
 
 ParameterWrapper::ParameterWrapper(const ParameterWrapper &parameter) {
