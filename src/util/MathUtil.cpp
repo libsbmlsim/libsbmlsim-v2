@@ -226,7 +226,6 @@ bool MathUtil::containsTarget(const ASTNode *ast, std::string target)
 ASTNode* MathUtil::simplify(const ASTNode *ast) {
   ASTNodeType_t type = ast->getType();
   ASTNode *left, *right, *tmp;
-  long left_val, right_val;
 
   if ((!ast->isOperator()) && (type != AST_FUNCTION_POWER)) {
     return ast->deepCopy();
@@ -234,70 +233,72 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
 
   left  = simplify(ast->getLeftChild());
   right = simplify(ast->getRightChild());
+  auto left_val = left->getValue();
+  auto right_val = right->getValue();
 
   switch (type) {
     case AST_PLUS:
-      if (left->isInteger()) {
-        left_val = left->getInteger();
-        if (left_val == 0) {
+      if (left->isNumber()) {
+        left_val = left->getValue();
+        if (left_val == 0.0) {
           return right->deepCopy();
-        } else if (right->isInteger()) {
-          right_val   = right->getInteger();
-          tmp = new ASTNode(AST_INTEGER);
+        } else if (right->isNumber()) {
+          right_val   = right->getValue();
+          tmp = new ASTNode();
           tmp->setValue(left_val+right_val);
           return tmp;
-        } else {  // left is an integer, right is not an integer (3 + x)
+        } else {  // left is an integer, right is not an integer (3 + x) => (x + 3)
           tmp = new ASTNode(AST_PLUS);
           tmp->addChild(right->deepCopy());
           tmp->addChild(left->deepCopy());
           return tmp;
         }
       }
-      if (right->isInteger()) { // left isn't integer
-        right_val = right->getInteger();
-        if (right_val == 0) {
+      if (right->isNumber()) { // left isn't integer
+        right_val = right->getValue();
+        if (right_val == 0.0) {
           return left->deepCopy();
         }
       }
       break;
     case AST_MINUS:
-      if (right->isInteger()) {
-        right_val = right->getInteger();
-        if (right_val == 0) {
+      if (right->isNumber()) {
+        right_val = right->getValue();
+        if (right_val == 0.0) {
           return left->deepCopy();
-        } else if (left->isInteger()) {
-          left_val   = left->getInteger();
-          tmp = new ASTNode(AST_INTEGER);
+        } else if (left->isNumber()) {
+          left_val   = left->getValue();
+          tmp = new ASTNode();
           tmp->setValue(left_val-right_val);
           return tmp;
         }
       }
       break;
     case AST_TIMES:
-      if (left->isInteger()) {
-        left_val = left->getInteger();
-        if (left_val == 0) {
-          tmp = new ASTNode(AST_INTEGER);
+      if (left->isNumber()) {
+        left_val = left->getValue();
+        if (left_val == 0.0) {
+          tmp = new ASTNode();
           tmp->setValue(0);
           return tmp;
-        } else if (left_val == 1) {
+        } else if (left_val == 1.0) {
           return right->deepCopy();
-        } else if (right->isInteger()) {
-          right_val   = right->getInteger();
-          tmp = new ASTNode(AST_INTEGER);
+        } else if (right->isNumber()) {
+          right_val   = right->getValue();
+          tmp = new ASTNode();
           tmp->setValue(left_val*right_val);
           return tmp;
         }
       }
-      if (right->isInteger()) { // left isn't integer
-        right_val = right->getInteger();
-        if (right_val == 0) {
-          tmp = new ASTNode(AST_INTEGER);
+      if (right->isNumber()) { // left isn't integer
+        right_val = right->getValue();
+        if (right_val == 0.0) {
+          tmp = new ASTNode();
           tmp->setValue(0);
           return tmp;
-        } else if (right_val == 1) {
+        } else if (right_val == 1.0) {
           return left->deepCopy();
-        } else {   // left is not an integer, right is an integer. (x * 2)
+        } else {   // left is not an integer, right is an integer. (x * 2) => (2 * x)
           tmp = new ASTNode(AST_TIMES);
           tmp->addChild(right->deepCopy());
           tmp->addChild(left->deepCopy());
@@ -306,35 +307,35 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
       }
       break; // can't simplify
     case AST_DIVIDE:
-      if (left->isInteger()) {
-        left_val = left->getInteger();
-        if (left_val == 0) {
-          tmp = new ASTNode(AST_INTEGER);
+      if (left->isNumber()) {
+        left_val = left->getValue();
+        if (left_val == 0.0) {
+          tmp = new ASTNode();
           tmp->setValue(0);
           return tmp;
-        } else if (right->isInteger()) {
-          right_val   = right->getInteger();
-          tmp = new ASTNode(AST_REAL);
+        } else if (right->isNumber()) {
+          right_val   = right->getValue();
+          tmp = new ASTNode();
           tmp->setValue((double)left_val/right_val);
           return tmp;
         }
       }
-      if (right->isInteger()) { // left isn't integer
-        right_val = right->getInteger();
-        if (right_val == 1) {
+      if (right->isNumber()) { // left isn't integer
+        right_val = right->getValue();
+        if (right_val == 1.0) {
           return left->deepCopy();
         }
       }
       break; // can't simplify
     case AST_POWER:
     case AST_FUNCTION_POWER:
-      if (right->isInteger()) {
-        right_val = right->getInteger();
-        if (right_val == 0) {
-          tmp = new ASTNode(AST_INTEGER);
+      if (right->isNumber()) {
+        right_val = right->getValue();
+        if (right_val == 0.0) {
+          tmp = new ASTNode();
           tmp->setValue(1);
           return tmp;
-        } else if (right_val == 1) {
+        } else if (right_val == 1.0) {
           return left->deepCopy();
         }
       }
