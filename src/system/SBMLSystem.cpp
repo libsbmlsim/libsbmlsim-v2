@@ -262,11 +262,11 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
 double SBMLSystem::evaluateFunctionNode(const ASTNode *node, int reactionIndex, const state &x) {
   auto name = node->getName();
   for (auto functionDefinition : model->getFunctionDefinitions()) {
-    if (name == functionDefinition.getName()) {
-      auto body = functionDefinition.getBody()->deepCopy();
-      for (auto i = 0; i < body->getNumChildren(); i++) {
-        auto bvar = body->getChild(i)->getName();
-        body->replaceArgument(bvar, node->getChild(i));
+    if (name == functionDefinition->getName()) {
+      auto body = functionDefinition->getBody()->deepCopy();
+      auto arguments = functionDefinition->getArguments();
+      for (auto i = 0; i < arguments.size(); i++) {
+        body->replaceArgument(arguments[i], node->getChild(i));
       }
       auto value = evaluateASTNode(body, reactionIndex, x);
       delete body;

@@ -40,7 +40,7 @@ ModelWrapper::ModelWrapper(const Model *model) {
   // function definitions
   for (auto i = 0; i < model->getNumFunctionDefinitions(); i++) {
     auto functionDefinition = model->getFunctionDefinition(i);
-    this->functionDefinitions.push_back(FunctionDefinitionWrapper(functionDefinition));
+    this->functionDefinitions.push_back(new FunctionDefinitionWrapper(functionDefinition));
   }
 
   // events
@@ -89,6 +89,10 @@ ModelWrapper::~ModelWrapper() {
 
   this->compartments.clear();
   this->reactions.clear();
+
+  for (auto functionDefinition : this->functionDefinitions) {
+    delete functionDefinition;
+  }
   this->functionDefinitions.clear();
 
   for (auto event : this->events) {
@@ -123,7 +127,7 @@ const std::vector<ReactionWrapper> &ModelWrapper::getReactions() const {
   return this->reactions;
 }
 
-const std::vector<FunctionDefinitionWrapper> &ModelWrapper::getFunctionDefinitions() const {
+std::vector<FunctionDefinitionWrapper *> &ModelWrapper::getFunctionDefinitions() {
   return this->functionDefinitions;
 }
 

@@ -23,7 +23,7 @@ class ModelWrapper {
   std::vector<ParameterWrapper *> &getParameters();
   const std::vector<CompartmentWrapper> &getCompartments() const;
   const std::vector<ReactionWrapper> &getReactions() const;
-  const std::vector<FunctionDefinitionWrapper> &getFunctionDefinitions() const;
+  std::vector<FunctionDefinitionWrapper *> &getFunctionDefinitions();
   std::vector<EventWrapper *> &getEvents();
   std::vector<InitialAssignmentWrapper *> &getInitialAssignments();
   std::vector<AssignmentRuleWrapper *> &getAssignmentRules();
@@ -33,7 +33,7 @@ class ModelWrapper {
   std::vector<ParameterWrapper *> parameters;
   std::vector<CompartmentWrapper> compartments;
   std::vector<ReactionWrapper> reactions;
-  std::vector<FunctionDefinitionWrapper> functionDefinitions;
+  std::vector<FunctionDefinitionWrapper *> functionDefinitions;
   std::vector<EventWrapper *> events;
   std::vector<InitialAssignmentWrapper *> initialAssignments;
   std::vector<AssignmentRuleWrapper *> assignmentRules;
