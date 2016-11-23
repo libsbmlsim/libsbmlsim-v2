@@ -15,3 +15,11 @@ add_test(
   COMMAND $<TARGET_FILE:SBMLSimTest>
   )
 
+# test: MathUtil
+add_executable(MathUtilTest MathUtilTest.cpp)
+target_link_libraries(MathUtilTest gtest_main sbmlsim)
+add_test(
+        NAME MathUtilTest
+        COMMAND $<TARGET_FILE:MathUtilTest>
+)
+
