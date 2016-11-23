@@ -210,6 +210,19 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const
 double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, const state &x) {
   auto name = node->getName();
 
+  // local parameter
+  if (reactionIndex != UNDEFINED_REACTION_INDEX) {
+    auto reactionId = model->getReactions().at(reactionIndex).getId();
+    auto parameters = model->getParameters();
+    for (auto i = 0; i < parameters.size(); i++) {
+      if (parameters[i]->isLocalParameter()
+          && name == parameters[i]->getId()
+          && reactionId == parameters[i]->getReactionId()) {
+        return parameters[i]->getValue();
+      }
+    }
+  }
+
   // species
   auto specieses = model->getSpecieses();
   for (auto i = 0; i < specieses.size(); i++) {
@@ -232,19 +245,6 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
   for (auto i = 0; i < compartments.size(); i++) {
     if (name == compartments[i].getId()) {
       return compartments[i].getValue();
-    }
-  }
-
-  // local parameter
-  if (reactionIndex != UNDEFINED_REACTION_INDEX) {
-    auto reactionId = model->getReactions().at(reactionIndex).getId();
-    auto parameters = model->getParameters();
-    for (auto i = 0; i < parameters.size(); i++) {
-      if (parameters[i]->isLocalParameter()
-          && name == parameters[i]->getId()
-          && reactionId == parameters[i]->getReactionId()) {
-        return parameters[i]->getValue();
-      }
     }
   }
 
