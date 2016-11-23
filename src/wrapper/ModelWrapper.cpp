@@ -61,6 +61,9 @@ ModelWrapper::ModelWrapper(const Model *model) {
     if (rule->isAssignment()) {
       const AssignmentRule *assignmentRule = static_cast<const AssignmentRule *>(rule);
       this->assignmentRules.push_back(new AssignmentRuleWrapper(assignmentRule));
+    } else if (rule->isRate()) {
+      const RateRule *rateRule = static_cast<const RateRule *>(rule);
+      this->rateRules.push_back(new RateRuleWrapper(rateRule));
     }
   }
 }
@@ -129,4 +132,8 @@ std::vector<InitialAssignmentWrapper *> &ModelWrapper::getInitialAssignments() {
 
 std::vector<AssignmentRuleWrapper *> &ModelWrapper::getAssignmentRules() {
   return this->assignmentRules;
+}
+
+std::vector<RateRuleWrapper *> &ModelWrapper::getRateRules() {
+  return this->rateRules;
 }

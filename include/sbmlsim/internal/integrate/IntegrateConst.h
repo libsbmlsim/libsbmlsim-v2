@@ -22,8 +22,8 @@ size_t integrate_const_detail(
   int step = 0;
 
   while (odeint::detail::less_eq_with_sign(time + time_step, end_time, dt)) {
-    // rules
-    system.handleRule(start_state, time);
+    // assignment rules
+    system.handleAssignmentRule(start_state, time);
 
     // initial assignments
     system.handleInitialAssignment(start_state, time);

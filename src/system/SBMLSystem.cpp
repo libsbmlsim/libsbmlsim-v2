@@ -50,6 +50,15 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
     }
   }
 
+  // rate rule
+  for (auto rateRule : model->getRateRules()) {
+    auto index = getIndexForSpecies(rateRule->getVariable());
+    auto value = evaluateASTNode(rateRule->getMath(), UNDEFINED_REACTION_INDEX, x);
+    dxdt[index] = value;
+
+    // TODO support compartment and parameter
+  }
+
   // boundaryCondition and constant
   auto &specieses = model->getSpecieses();
   for (auto i = 0; i < specieses.size(); i++) {
@@ -111,12 +120,6 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
       }
     }
   }
-}
-
-void SBMLSystem::handleRule(state &x, double t) {
-  this->handleAlgebraicRule(x, t);
-  this->handleAssignmentRule(x, t);
-  this->handleRateRule(x, t);
 }
 
 void SBMLSystem::handleAlgebraicRule(state &x, double t) {

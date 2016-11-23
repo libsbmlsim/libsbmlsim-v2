@@ -12,6 +12,7 @@
 #include "sbmlsim/internal/wrapper/EventWrapper.h"
 #include "sbmlsim/internal/wrapper/InitialAssignmentWrapper.h"
 #include "sbmlsim/internal/wrapper/AssignmentRuleWrapper.h"
+#include "sbmlsim/internal/wrapper/RateRuleWrapper.h"
 
 class ModelWrapper {
  public:
@@ -26,6 +27,7 @@ class ModelWrapper {
   std::vector<EventWrapper *> &getEvents();
   std::vector<InitialAssignmentWrapper *> &getInitialAssignments();
   std::vector<AssignmentRuleWrapper *> &getAssignmentRules();
+  std::vector<RateRuleWrapper *> &getRateRules();
  private:
   std::vector<SpeciesWrapper> specieses;
   std::vector<ParameterWrapper> parameters;
@@ -35,6 +37,7 @@ class ModelWrapper {
   std::vector<EventWrapper *> events;
   std::vector<InitialAssignmentWrapper *> initialAssignments;
   std::vector<AssignmentRuleWrapper *> assignmentRules;
+  std::vector<RateRuleWrapper *> rateRules;
 };
 
 #endif /* INCLUDE_SBMLSIM_INTERNAL_WRAPPER_MODELWRAPPER_H_ */
