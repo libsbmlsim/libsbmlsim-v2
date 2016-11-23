@@ -40,13 +40,25 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
     // reactants
     for (auto reactant : reaction.getReactants()) {
       auto index = getIndexForSpecies(reactant.getSpeciesId());
-      dxdt[index] -= value * reactant.getStoichiometry();
+      double stoichiometry;
+      if (reactant.hasStoichiometryMath()) {
+        stoichiometry = evaluateASTNode(reactant.getStoichiometryMath(), i, x);
+      } else {
+        stoichiometry = reactant.getStoichiometry();
+      }
+      dxdt[index] -= value * stoichiometry;
     }
 
     // products
     for (auto product : reaction.getProducts()) {
       auto index = getIndexForSpecies(product.getSpeciesId());
-      dxdt[index] += value * product.getStoichiometry();
+      double stoichiometry;
+      if (product.hasStoichiometryMath()) {
+        stoichiometry = evaluateASTNode(product.getStoichiometryMath(), i, x);
+      } else {
+        stoichiometry = product.getStoichiometry();
+      }
+      dxdt[index] += value * stoichiometry;
     }
   }
 
