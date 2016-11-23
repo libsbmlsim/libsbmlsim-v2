@@ -13,7 +13,7 @@ vector<OutputField> createOutputField(string variablesStr, string amountStr, str
 void usage(string myname, options_description opt) {
   cout << "Usage: " << myname << " [options] sbml.xml" << endl;
   cout << opt << endl;
-  exit(0);
+  exit(1);
 }
 
 int main(int argc, const char* argv[]) {
