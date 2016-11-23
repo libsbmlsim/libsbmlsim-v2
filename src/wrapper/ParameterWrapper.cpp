@@ -25,12 +25,12 @@ ParameterWrapper::~ParameterWrapper() {
   // nothing to do
 }
 
-ParameterWrapper ParameterWrapper::asGlobalParameter(const Parameter *parameter) {
-  return ParameterWrapper(parameter);
+ParameterWrapper *ParameterWrapper::asGlobalParameter(const Parameter *parameter) {
+  return new ParameterWrapper(parameter);
 }
 
-ParameterWrapper ParameterWrapper::asLocalParameter(const Parameter *parameter, const Reaction *reaction) {
-  return ParameterWrapper(parameter, reaction);
+ParameterWrapper *ParameterWrapper::asLocalParameter(const Parameter *parameter, const Reaction *reaction) {
+  return new ParameterWrapper(parameter, reaction);
 }
 
 const std::string &ParameterWrapper::getId() const {

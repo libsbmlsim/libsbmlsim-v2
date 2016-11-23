@@ -20,7 +20,7 @@ class ModelWrapper {
   ModelWrapper(const ModelWrapper &model);
   ~ModelWrapper();
   const std::vector<SpeciesWrapper> &getSpecieses() const;
-  const std::vector<ParameterWrapper> &getParameters() const;
+  std::vector<ParameterWrapper *> &getParameters();
   const std::vector<CompartmentWrapper> &getCompartments() const;
   const std::vector<ReactionWrapper> &getReactions() const;
   const std::vector<FunctionDefinitionWrapper> &getFunctionDefinitions() const;
@@ -30,7 +30,7 @@ class ModelWrapper {
   std::vector<RateRuleWrapper *> &getRateRules();
  private:
   std::vector<SpeciesWrapper> specieses;
-  std::vector<ParameterWrapper> parameters;
+  std::vector<ParameterWrapper *> parameters;
   std::vector<CompartmentWrapper> compartments;
   std::vector<ReactionWrapper> reactions;
   std::vector<FunctionDefinitionWrapper> functionDefinitions;

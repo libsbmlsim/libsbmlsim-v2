@@ -8,8 +8,8 @@ enum class ParameterScope;
 
 class ParameterWrapper {
  public:
-  static ParameterWrapper asGlobalParameter(const Parameter *parameter);
-  static ParameterWrapper asLocalParameter(const Parameter *parameter, const Reaction *reaction);
+  static ParameterWrapper *asGlobalParameter(const Parameter *parameter);
+  static ParameterWrapper *asLocalParameter(const Parameter *parameter, const Reaction *reaction);
   ParameterWrapper(const ParameterWrapper &parameter);
   ~ParameterWrapper();
   const std::string &getId() const;

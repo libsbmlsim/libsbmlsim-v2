@@ -115,8 +115,8 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
     // global parameter
     auto parameters = model->getParameters();
     for (auto i = 0; i < parameters.size(); i++) {
-      if (parameters[i].isGlobalParameter() && symbol == parameters[i].getId()) {
-        parameters[i].setValue(value);
+      if (parameters[i]->isGlobalParameter() && symbol == parameters[i]->getId()) {
+        parameters[i]->setValue(value);
       }
     }
   }
@@ -151,8 +151,8 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
     // global parameter
     auto parameters = model->getParameters();
     for (auto i = 0; i < parameters.size(); i++) {
-      if (parameters[i].isGlobalParameter() && variable == parameters[i].getId()) {
-        parameters[i].setValue(value);
+      if (parameters[i]->isGlobalParameter() && variable == parameters[i]->getId()) {
+        parameters[i]->setValue(value);
       }
     }
   }
@@ -240,10 +240,10 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
     auto reactionId = model->getReactions().at(reactionIndex).getId();
     auto parameters = model->getParameters();
     for (auto i = 0; i < parameters.size(); i++) {
-      if (parameters[i].isLocalParameter()
-          && name == parameters[i].getId()
-          && reactionId == parameters[i].getReactionId()) {
-        return parameters[i].getValue();
+      if (parameters[i]->isLocalParameter()
+          && name == parameters[i]->getId()
+          && reactionId == parameters[i]->getReactionId()) {
+        return parameters[i]->getValue();
       }
     }
   }
@@ -251,8 +251,8 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
   // global parameter
   auto parameters = model->getParameters();
   for (auto i = 0; i < parameters.size(); i++) {
-    if (parameters[i].isGlobalParameter() && name == parameters[i].getId()) {
-      return parameters[i].getValue();
+    if (parameters[i]->isGlobalParameter() && name == parameters[i]->getId()) {
+      return parameters[i]->getValue();
     }
   }
 

@@ -81,7 +81,12 @@ ModelWrapper::ModelWrapper(const ModelWrapper &model) {
 
 ModelWrapper::~ModelWrapper() {
   this->specieses.clear();
+
+  for (auto parameter : this->parameters) {
+    delete parameter;
+  }
   this->parameters.clear();
+
   this->compartments.clear();
   this->reactions.clear();
   this->functionDefinitions.clear();
@@ -106,7 +111,7 @@ const std::vector<SpeciesWrapper> &ModelWrapper::getSpecieses() const {
   return this->specieses;
 }
 
-const std::vector<ParameterWrapper> &ModelWrapper::getParameters() const {
+std::vector<ParameterWrapper *> &ModelWrapper::getParameters() {
   return this->parameters;
 }
 
