@@ -19,12 +19,14 @@ void SBMLSim::simulate(const std::string &filepath, const RunConfiguration &conf
 
 void SBMLSim::simulate(const SBMLDocument *document, const RunConfiguration &conf) {
   const Model *model = document->getModel();
-  simulate(model, conf);
+  unsigned int level = document->getLevel();
+  unsigned int version = document->getVersion();
+  simulate(model, level, version, conf);
 }
 
-void SBMLSim::simulate(const Model *model, const RunConfiguration &conf) {
+void SBMLSim::simulate(const Model *model, unsigned int level, unsigned int version, const RunConfiguration &conf) {
   Model *clonedModel = model->clone();
-  SBMLDocument *dummyDocument = new SBMLDocument();
+  SBMLDocument *dummyDocument = new SBMLDocument(level, version);
   clonedModel->setSBMLDocument(dummyDocument);
   dummyDocument->setModel(clonedModel);
 
