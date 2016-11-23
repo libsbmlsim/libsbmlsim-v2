@@ -24,10 +24,10 @@ endif()
 
 # test: testintegrator
 if (PYTHONINTERP_FOUND)
-add_test(
-  NAME TestIntegrator
-  COMMAND ${PYTHON_EXECUTABLE} $<TARGET_FILE_DIR:testintegrator>/batchTest.py 1-25
-  )
+#add_test(
+#NAME TestIntegrator
+#COMMAND ${PYTHON_EXECUTABLE} $<TARGET_FILE_DIR:testintegrator>/batchTest.py 1-25
+#)
 endif()
 
 # installation: testintegrator
