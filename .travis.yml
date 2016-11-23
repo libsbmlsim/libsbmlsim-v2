@@ -10,6 +10,7 @@ compiler:
 before_install:
   - wget http://downloads.sourceforge.net/project/sbml/libsbml/5.13.0/stable/Linux/64-bit/libSBML-5.13.0-Linux-x64.deb
   - sudo dpkg -i libSBML-5.13.0-Linux-x64.deb
+  - sh travis.testsuite.xml.sh > $HOME/.testsuite.xml
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
