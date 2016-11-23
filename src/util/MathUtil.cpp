@@ -26,5 +26,5 @@ double MathUtil::factorial(unsigned long long n) {
 }
 
 long long MathUtil::ceil(double f) {
-  return ceil(f);
+  return ::ceil(f);
 }
