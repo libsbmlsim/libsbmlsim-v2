@@ -633,8 +633,11 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       rtn->addChild(times);
       break;
     }
+    /**
+     * Following codes are no exact method. It uses some approximation.
+     */
     case AST_FUNCTION_ABS: {
-      /* Approximation */
+      /** Approximation **/
       /* d{abs(u)}/dx = du/dx * u / |u| */
       /* Note: can not be applied for some x where u(x) == 0 */
       rtn->setType(AST_TIMES);
@@ -651,12 +654,51 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
     }
     case AST_FUNCTION_CEILING:
     case AST_FUNCTION_FLOOR: {
-      /* Approximation */
+      /** Approximation **/
       /* d{ceil(u)}/dx = 0  */
       /* Note: approximation. can not be applied if u(x) == integer value */
       rtn->setValue(0);
       break;
     }
+    case AST_FUNCTION_FACTORIAL: {
+      /** Approximation **/
+      /* Stirling's approximation              */
+      /*   n! == sqrt(2 * PI * n) * (n / E)^n  */
+      ASTNode *stirling = new ASTNode(AST_TIMES);
+      ASTNode *n1 = ast->getLeftChild()->deepCopy();
+      ASTNode *n2 = ast->getLeftChild()->deepCopy();
+      ASTNode *n3 = ast->getLeftChild()->deepCopy();
+      ASTNode *sqrt = new ASTNode(AST_FUNCTION_ROOT);
+      ASTNode *square = new ASTNode();
+      square->setValue(2);
+      ASTNode *sqrt_times = new ASTNode(AST_TIMES);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      ASTNode *pi = new ASTNode(AST_CONSTANT_PI);
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *divide = new ASTNode(AST_DIVIDE);
+      ASTNode *e = new ASTNode(AST_CONSTANT_E);
+      // left
+      sqrt_times->addChild(two);
+      sqrt_times->addChild(pi);
+      sqrt_times->addChild(n1);
+      sqrt->addChild(square);
+      sqrt->addChild(sqrt_times);
+      // right
+      divide->addChild(n2);
+      divide->addChild(e);
+      power->addChild(divide);
+      power->addChild(n3);
+      // concat
+      stirling->addChild(sqrt);
+      stirling->addChild(power);
+      // differentiate stirling
+      rtn = differentiate(stirling, target);
+      break;
+    }
+    /**
+     * Approximation block end.
+     */
     case AST_REAL:
     case AST_INTEGER:
     case AST_NAME_TIME:

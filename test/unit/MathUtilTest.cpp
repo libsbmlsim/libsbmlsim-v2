@@ -478,4 +478,15 @@ namespace {
     EXPECT_EQ(s, "0");
   }
 
+  /*
+  TEST_F(MathUtilTest, differentiateTestFactorial) {
+    ASTNode* ast = SBML_parseFormula("factorial(x)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToL3String(diff);
+    std::cout << s << std::endl;
+    EXPECT_EQ(1, 1);
+  }
+   */
+
 } // namespace
