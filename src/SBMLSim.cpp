@@ -51,8 +51,8 @@ void SBMLSim::simulateRungeKutta4(const ModelWrapper *model, const RunConfigurat
   observer.outputHeader();
 
   // integrate
-  integrate_const(stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(),
-                  std::ref(observer));
+  sbmlsim::integrate_const(
+      stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), std::ref(observer));
 }
 
 void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfiguration &conf) {
