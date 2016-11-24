@@ -609,6 +609,30 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       rtn->addChild(exp);
       break;
     }
+    case AST_FUNCTION_LN: {
+      /* d{ln(u)}/dx = du/dx / u */
+      rtn->setType(AST_DIVIDE);
+      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *u = ast->getLeftChild()->deepCopy();
+      rtn->addChild(dudx);
+      rtn->addChild(u);
+      break;
+    }
+    case AST_FUNCTION_LOG: {
+      /* d{log_base(u)}/dx = du/dx / (u * ln(base)) */
+      rtn->setType(AST_DIVIDE);
+      ASTNode *base = ast->getLeftChild()->deepCopy();
+      ASTNode *dudx = differentiate(ast->getRightChild(), target);
+      ASTNode *u = ast->getRightChild()->deepCopy();
+      ASTNode *times = new ASTNode(AST_TIMES);
+      ASTNode *ln = new ASTNode(AST_FUNCTION_LN);
+      ln->addChild(base);
+      times->addChild(u);
+      times->addChild(ln);
+      rtn->addChild(dudx);
+      rtn->addChild(times);
+      break;
+    }
     case AST_FUNCTION_ABS: {
       /* Approximation */
       /* d{abs(u)}/dx = du/dx * u / |u| */
