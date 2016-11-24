@@ -128,19 +128,18 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       break;
     }
     case AST_FUNCTION_ROOT: {
-      rtn->setType(AST_TIMES);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
-      rtn->addChild(left);
-      ASTNode *right = new ASTNode(AST_TIMES);
-      ASTNode *tmp2 = new ASTNode(AST_REAL);
-      tmp2->setValue(0.5);
-      right->addChild(tmp2);
-      tmp2 = new ASTNode(AST_FUNCTION_POWER);
-      tmp2->addChild(ast->getLeftChild()->deepCopy());
-      ASTNode *tmp3 = new ASTNode(AST_REAL);
-      tmp3->setValue(-0.5);
-      tmp2->addChild(tmp3);
-      right->addChild(tmp2);
+      // convert root(n, x) to x^(-1 * n)
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *left = ast->getRightChild()->deepCopy();
+      ASTNode *right = new ASTNode(AST_DIVIDE);
+      ASTNode *rl = new ASTNode();
+      rl->setValue(1);
+      ASTNode *rr = ast->getLeftChild()->deepCopy();
+      right->addChild(rl);
+      right->addChild(rr);
+      power->addChild(left);
+      power->addChild(right);
+      rtn = differentiate(power, target);
       break;
     }
     case AST_FUNCTION_SIN: {
@@ -415,10 +414,18 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
           simplifiedRoot->setValue(0);
           return simplifiedRoot;
         } else if (right->isNumber()) {
-          right_val   = right->getValue();
-          simplifiedRoot = new ASTNode();
-          simplifiedRoot->setValue((double)left_val/right_val);
-          return simplifiedRoot;
+          right_val = right->getValue();
+          double left_intpart;
+          double right_intpart;
+          if (left_val >= right_val && right_val != 0
+              && std::modf(left_val, &left_intpart) == 0.0
+              && std::modf(right_val, &right_intpart) == 0.0) {
+            if ((int)left_val % (int)right_val == 0) {
+              simplifiedRoot = new ASTNode();
+              simplifiedRoot->setValue(left_val / right_val);
+              return simplifiedRoot;
+            }
+          }
         }
       }
       if (right->isNumber()) { // left is not an integer

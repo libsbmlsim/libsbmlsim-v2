@@ -30,11 +30,11 @@ namespace {
   }
 
   TEST_F(MathUtilTest, simplifyTest) {
-    ASTNode* ast = SBML_parseFormula("((2 + 3 * 5) / 2) * x");
+    ASTNode* ast = SBML_parseFormula("((3 + 3 * 5) / 2) * x");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
     std::string s = SBML_formulaToString(simp);
-    EXPECT_EQ(s, "8.5 * x");
+    EXPECT_EQ(s, "9 * x");
   }
 
   TEST_F(MathUtilTest, simplifyTest2) {
@@ -42,7 +42,7 @@ namespace {
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
     std::string s = SBML_formulaToString(simp);
-    EXPECT_EQ(s, "2 * x + 7.5 * y");
+    EXPECT_EQ(s, "2 * x + 15 / 2 * y");
   }
 
   TEST_F(MathUtilTest, simplifyTest3) {
@@ -141,6 +141,14 @@ namespace {
     EXPECT_NE(s, "sin(6 * x)");
   }
 
+  TEST_F(MathUtilTest, differentiateTest) {
+    ASTNode* ast = SBML_parseFormula("x");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "1");
+  }
+
   TEST_F(MathUtilTest, differentiateTestAdd) {
     ASTNode* ast = SBML_parseFormula("2 * x + x ^ 2 + y ^ 2");
     ast->reduceToBinary();
@@ -222,12 +230,20 @@ namespace {
   }
 
   TEST_F(MathUtilTest, differentiateTestPowE) {
-    // ed{^u}/dx = e^u*du/dx
+    // d{e^u}/dx = e^u*du/dx
     ASTNode* ast = SBML_parseL3Formula("exponentiale^(3 * x^2)");
     ast->reduceToBinary();
     ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
     std::string s = SBML_formulaToL3String(diff);
     EXPECT_EQ(s, "exponentiale^(3 * x^2) * (6 * x)");
+  }
+
+  TEST_F(MathUtilTest, differentiateTestSQRT) {
+    ASTNode* ast = SBML_parseFormula("sqrt(x)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "1 / 2 * x^(1 / 2 - 1)");
   }
 
   TEST_F(MathUtilTest, differentiateTestSin) {
