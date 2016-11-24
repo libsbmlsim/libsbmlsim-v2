@@ -18,6 +18,7 @@ class OutputField {
 };
 
 enum class OutputType {
+  ASIS,
   AMOUNT,
   CONCENTRATION
 };

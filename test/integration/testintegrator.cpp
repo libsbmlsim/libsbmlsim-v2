@@ -131,6 +131,8 @@ vector<OutputField> createOutputField(string variablesStr, string amountStr, str
       ret.push_back(OutputField(variables[i], OutputType::AMOUNT));
     } else if (find(concentration.begin(), concentration.end(), variables[i]) != concentration.end()) {
       ret.push_back(OutputField(variables[i], OutputType::CONCENTRATION));
+    } else {
+      ret.push_back(OutputField(variables[i], OutputType::ASIS));
     }
   }
 

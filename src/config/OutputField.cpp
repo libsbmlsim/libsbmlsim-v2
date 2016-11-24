@@ -19,6 +19,8 @@ const OutputType &OutputField::getType() const {
 
 std::ostream &operator<<(std::ostream &s, const OutputField &obj) {
   switch (obj.getType()) {
+    case OutputType::ASIS:
+      return s << "[" << obj.getId() << ", ASIS]";
     case OutputType::AMOUNT:
       return s << "[" << obj.getId() << ", AMOUNT]";
     case OutputType::CONCENTRATION:
