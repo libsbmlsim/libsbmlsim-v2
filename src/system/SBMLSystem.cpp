@@ -109,8 +109,18 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
     auto specieses = model->getSpecieses();
     for (auto i = 0; i < specieses.size(); i++) {
       if (symbol == specieses[i].getId()) {
-        auto index = getStateIndexForVariable(specieses[i].getId());
-        x[index] = value;
+        auto speciesIndex = getStateIndexForVariable(specieses[i].getId());
+        if (specieses[i].shouldMultiplyByCompartmentSizeOnAssignment()) {
+          auto compartments = model->getCompartments();
+          for (auto j = 0; j < compartments.size(); j++) {
+            if (specieses[i].getCompartmentId() == compartments[j].getId()) {
+              auto compartmentIndex = getStateIndexForVariable(compartments[j].getId());
+              x[speciesIndex] = value * x[compartmentIndex];
+            }
+          }
+        } else {
+          x[speciesIndex] = value;
+        }
       }
     }
 
@@ -148,8 +158,18 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
     auto specieses = model->getSpecieses();
     for (auto i = 0; i < specieses.size(); i++) {
       if (variable == specieses[i].getId()) {
-        auto index = getStateIndexForVariable(specieses[i].getId());
-        x[index] = value;
+        auto speciesIndex = getStateIndexForVariable(specieses[i].getId());
+        if (specieses[i].shouldMultiplyByCompartmentSizeOnAssignment()) {
+          auto compartments = model->getCompartments();
+          for (auto j = 0; j < compartments.size(); j++) {
+            if (specieses[i].getCompartmentId() == compartments[j].getId()) {
+              auto compartmentIndex = getStateIndexForVariable(compartments[j].getId());
+              x[speciesIndex] = value * x[compartmentIndex];
+            }
+          }
+        } else {
+          x[speciesIndex] = value;
+        }
       }
     }
 
@@ -250,7 +270,7 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, const state &x) {
   auto specieses = model->getSpecieses();
   for (auto i = 0; i < specieses.size(); i++) {
     if (name == specieses[i].getId()) {
-      if (specieses[i].shouldDivideByCompartmentSize()) {
+      if (specieses[i].shouldDivideByCompartmentSizeOnEvaluation()) {
         auto compartments = model->getCompartments();
         for (auto j = 0; j < compartments.size(); j++) {
           if (specieses[i].getCompartmentId() == compartments[j].getId()) {

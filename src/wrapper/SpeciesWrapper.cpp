@@ -34,12 +34,11 @@ SpeciesWrapper::SpeciesWrapper(const Species *species) {
     this->constant = false;
   }
 
-  this->substanceUnitsOnly = species->getHasOnlySubstanceUnits();
-  if (!this->substanceUnitsOnly &&
+  if (!species->getHasOnlySubstanceUnits() &&
       (!compartment->isSetSpatialDimensions() || compartment->getSpatialDimensions() > 0)) {
-    this->divideByCompartmentSize = true;
+    this->divideByCompartmentSizeOnEvaluation = true;
   } else {
-    this->divideByCompartmentSize = false;
+    this->divideByCompartmentSizeOnEvaluation = false;
   }
 }
 
@@ -48,10 +47,9 @@ SpeciesWrapper::SpeciesWrapper(const SpeciesWrapper &species) {
   this->initialAmountValue = species.initialAmountValue;
   this->amountValue = species.amountValue;
   this->compartmentId = species.compartmentId;
-  this->substanceUnitsOnly = species.substanceUnitsOnly;
   this->boundaryCondition = species.boundaryCondition;
   this->constant = species.constant;
-  this->divideByCompartmentSize = species.divideByCompartmentSize;
+  this->divideByCompartmentSizeOnEvaluation = species.divideByCompartmentSizeOnEvaluation;
 }
 
 SpeciesWrapper::~SpeciesWrapper() {
@@ -74,10 +72,6 @@ const std::string &SpeciesWrapper::getCompartmentId() const {
   return this->compartmentId;
 }
 
-bool SpeciesWrapper::hasOnlySubstanceUnits() const {
-  return this->substanceUnitsOnly;
-}
-
 bool SpeciesWrapper::hasBoundaryCondition() const {
   return this->boundaryCondition;
 }
@@ -86,6 +80,10 @@ bool SpeciesWrapper::isConstant() const {
   return this->constant;
 }
 
-bool SpeciesWrapper::shouldDivideByCompartmentSize() const {
-  return this->divideByCompartmentSize;
+bool SpeciesWrapper::shouldDivideByCompartmentSizeOnEvaluation() const {
+  return this->divideByCompartmentSizeOnEvaluation;
+}
+
+bool SpeciesWrapper::shouldMultiplyByCompartmentSizeOnAssignment() const {
+  return shouldDivideByCompartmentSizeOnEvaluation();
 }

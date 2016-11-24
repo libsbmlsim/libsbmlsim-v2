@@ -4,8 +4,6 @@
 #include <sbml/SBMLTypes.h>
 #include <string>
 
-enum class SpeciesValueType;
-
 class SpeciesWrapper {
  public:
   explicit SpeciesWrapper(const Species *species);
@@ -15,19 +13,18 @@ class SpeciesWrapper {
   double getAmountValue() const;
   double getInitialAmountValue() const;
   const std::string &getCompartmentId() const;
-  bool hasOnlySubstanceUnits() const;
   bool hasBoundaryCondition() const;
   bool isConstant() const;
-  bool shouldDivideByCompartmentSize() const;
+  bool shouldDivideByCompartmentSizeOnEvaluation() const;
+  bool shouldMultiplyByCompartmentSizeOnAssignment() const;
  private:
   std::string id;
   double amountValue;
   double initialAmountValue;
   std::string compartmentId;
-  bool substanceUnitsOnly;
   bool boundaryCondition;
   bool constant;
-  bool divideByCompartmentSize;
+  bool divideByCompartmentSizeOnEvaluation;
 };
 
 #endif /* INCLUDE_SBMLSIM_INTERNAL_WRAPPER_SPECIESWRAPPER_H_ */
