@@ -270,4 +270,28 @@ namespace {
     EXPECT_EQ(s, "(2 * x + 3) * sec(x^2 + 3 * x + 4)^2");
   }
 
+  TEST_F(MathUtilTest, differentiateTestSinh) {
+    ASTNode* ast = SBML_parseFormula("sinh(x^2 + 3 * x)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "(2 * x + 3) * cosh(x^2 + 3 * x)");
+  }
+
+  TEST_F(MathUtilTest, differentiateTestCosh) {
+    ASTNode* ast = SBML_parseFormula("cosh(x^2 + 3 * x)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "(2 * x + 3) * sinh(x^2 + 3 * x)");
+  }
+
+  TEST_F(MathUtilTest, differentiateTestTanh) {
+    ASTNode* ast = SBML_parseFormula("tanh(x^2 + 3 * x)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "(2 * x + 3) * sech(x^2 + 3 * x)^2");
+  }
+
 } // namespace
