@@ -255,6 +255,114 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       rtn->addChild(right);
       break;
     }
+    case AST_FUNCTION_SECH: {
+      /* d{sech(u)}/dx = - du/dx * sech(u) * tanh(u) */
+      rtn->setType(AST_TIMES);
+      ASTNode *minus = new ASTNode();
+      minus->setValue(-1);
+      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *sech = new ASTNode(AST_FUNCTION_SECH);
+      sech->addChild(ast->getLeftChild()->deepCopy());
+      ASTNode *tanh = new ASTNode(AST_FUNCTION_TANH);
+      tanh->addChild(ast->getLeftChild()->deepCopy());
+      rtn->addChild(minus);
+      rtn->addChild(dudx);
+      rtn->addChild(sech);
+      rtn->addChild(tanh);
+      break;
+    }
+    case AST_FUNCTION_COTH: {
+      /* d{coth(u)}/dx = - du/dx * cosech(u)^2 */
+      /*               = - du/dx / sinh(u)^2   */
+      /*     cosech(u) = 1 / sinh(u)           */
+      rtn->setType(AST_TIMES);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_DIVIDE);
+      ASTNode *rl = new ASTNode();
+      rl->setValue(-1);
+      ASTNode *rr = new ASTNode(AST_POWER);
+      ASTNode *sin = new ASTNode(AST_FUNCTION_SINH);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      ASTNode *u = ast->getLeftChild()->deepCopy();
+      sin->addChild(u);
+      rr->addChild(sin);
+      rr->addChild(two);
+      right->addChild(rl);
+      right->addChild(rr);
+      rtn->addChild(left);
+      rtn->addChild(right);
+      break;
+    }
+    case AST_FUNCTION_ARCSIN: {
+      /* d{asin(u)}/dx = du/dx / sqrt(1 - u^2) */
+      rtn->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_FUNCTION_ROOT);
+      ASTNode *square = new ASTNode();
+      square->setValue(2);
+      ASTNode *minus = new ASTNode(AST_MINUS);
+      ASTNode *one = new ASTNode();
+      one->setValue(1);
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(two);
+      minus->addChild(one);
+      minus->addChild(power);
+      right->addChild(square);
+      right->addChild(minus);
+      rtn->addChild(left);
+      rtn->addChild(right);
+      break;
+    }
+    case AST_FUNCTION_ARCCOS: {
+      /* d{acos(u)}/dx = - du/dx / sqrt(1 - u^2) */
+      rtn->setType(AST_DIVIDE);
+      ASTNode *left = new ASTNode(AST_TIMES);
+      ASTNode *minusone = new ASTNode();
+      minusone->setValue(-1);
+      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_FUNCTION_ROOT);
+      ASTNode *square = new ASTNode();
+      square->setValue(2);
+      ASTNode *minus = new ASTNode(AST_MINUS);
+      ASTNode *one = new ASTNode();
+      one->setValue(1);
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(two);
+      minus->addChild(one);
+      minus->addChild(power);
+      right->addChild(square);
+      right->addChild(minus);
+      left->addChild(minusone);
+      left->addChild(dudx);
+      rtn->addChild(left);
+      rtn->addChild(right);
+      break;
+    }
+    case AST_FUNCTION_ARCTAN: {
+      /* d{atan(u)}/dx = du/dx / (1 + u^2) */
+      rtn->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_PLUS);
+      ASTNode *one = new ASTNode();
+      one->setValue(1);
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(two);
+      right->addChild(one);
+      right->addChild(power);
+      rtn->addChild(left);
+      rtn->addChild(right);
+      break;
+    }
     case AST_REAL:
     case AST_INTEGER:
     case AST_NAME_TIME:

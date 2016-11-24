@@ -310,4 +310,44 @@ namespace {
     EXPECT_EQ(s, "(2 * x + 3) * sech(x^2 + 3 * x)^2");
   }
 
+  TEST_F(MathUtilTest, differentiateTestSech) {
+    ASTNode* ast = SBML_parseFormula("sech(x^2+3*x+4)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "-1 * (2 * x + 3) * sech(x^2 + 3 * x + 4) * tanh(x^2 + 3 * x + 4)");
+  }
+
+  TEST_F(MathUtilTest, differentiateTestCoth) {
+    ASTNode* ast = SBML_parseFormula("coth(x^2+3*x+4)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "(2 * x + 3) * (-1 / sinh(x^2 + 3 * x + 4)^2)");
+  }
+
+  TEST_F(MathUtilTest, differentiateTestAsin) {
+    ASTNode* ast = SBML_parseFormula("asin(x^2+3*x+4)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "(2 * x + 3) / sqrt(1 - (x^2 + 3 * x + 4)^2)");
+  }
+
+  TEST_F(MathUtilTest, differentiateTestAcos) {
+    ASTNode* ast = SBML_parseFormula("acos(x^2+3*x+4)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "-1 * (2 * x + 3) / sqrt(1 - (x^2 + 3 * x + 4)^2)");
+  }
+
+  TEST_F(MathUtilTest, differentiateTestAtan) {
+    ASTNode* ast = SBML_parseFormula("atan(x^2+3*x+4)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "(2 * x + 3) / ((x^2 + 3 * x + 4)^2 + 1)");
+  }
+
 } // namespace
