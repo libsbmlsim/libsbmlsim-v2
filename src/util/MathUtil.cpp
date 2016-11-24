@@ -600,6 +600,39 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       rtn->addChild(divide);
       break;
     }
+    case AST_FUNCTION_EXP: {
+      /* d{exp(u)}/dx = du/dx * exp(u) */
+      rtn->setType(AST_TIMES);
+      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *exp = ast->deepCopy();
+      rtn->addChild(dudx);
+      rtn->addChild(exp);
+      break;
+    }
+    case AST_FUNCTION_ABS: {
+      /* Approximation */
+      /* d{abs(u)}/dx = du/dx * u / |u| */
+      /* Note: can not be applied for some x where u(x) == 0 */
+      rtn->setType(AST_TIMES);
+      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *divide = new ASTNode(AST_DIVIDE);
+      ASTNode *u = ast->getLeftChild()->deepCopy();
+      ASTNode *abs = new ASTNode(AST_FUNCTION_ABS);
+      abs->addChild(ast->getLeftChild()->deepCopy()); // |u|
+      divide->addChild(u);
+      divide->addChild(abs);
+      rtn->addChild(dudx);
+      rtn->addChild(divide);
+      break;
+    }
+    case AST_FUNCTION_CEILING:
+    case AST_FUNCTION_FLOOR: {
+      /* Approximation */
+      /* d{ceil(u)}/dx = 0  */
+      /* Note: approximation. can not be applied if u(x) == integer value */
+      rtn->setValue(0);
+      break;
+    }
     case AST_REAL:
     case AST_INTEGER:
     case AST_NAME_TIME:
