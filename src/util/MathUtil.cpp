@@ -209,10 +209,10 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
 bool MathUtil::containsTarget(const ASTNode *ast, std::string target)
 {
   bool found = false;
-  if (ast->getLeftChild() != NULL) {
+  if (ast->getLeftChild() != nullptr) {
     found |= containsTarget(ast->getLeftChild(), target);
   }
-  if (ast->getRightChild() != NULL) {
+  if (ast->getRightChild() != nullptr) {
     found |= containsTarget(ast->getRightChild(), target);
   }
   if (ast->getType() == AST_NAME) {
@@ -229,7 +229,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
   ASTNode *left, *right, *tmp, *tmpl, *tmpr;
   ASTNode *ll, *lr;
 
-  if ((!ast->isOperator()) && (type != AST_FUNCTION_POWER)) {
+  if ((ast->getLeftChild() == nullptr) || (ast->getRightChild() == nullptr)) {
     return ast->deepCopy();
   }
 

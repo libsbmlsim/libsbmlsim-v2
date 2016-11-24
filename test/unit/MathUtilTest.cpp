@@ -29,7 +29,7 @@ namespace {
     EXPECT_FALSE(MathUtil::containsTarget(ast, s));
   }
 
-  TEST_F(MathUtilTest, simplifyTestTrue) {
+  TEST_F(MathUtilTest, simplifyTest) {
     ASTNode* ast = SBML_parseFormula("((2 + 3 * 5) / 2) * x");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -37,7 +37,7 @@ namespace {
     EXPECT_EQ(s, "8.5 * x");
   }
 
-  TEST_F(MathUtilTest, simplifyTestTrue2) {
+  TEST_F(MathUtilTest, simplifyTest2) {
     ASTNode* ast = SBML_parseFormula("2 * x + (3 * 5 / 2) * y");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -45,7 +45,7 @@ namespace {
     EXPECT_EQ(s, "2 * x + 7.5 * y");
   }
 
-  TEST_F(MathUtilTest, simplifyTestTrue3) {
+  TEST_F(MathUtilTest, simplifyTest3) {
     ASTNode* ast = SBML_parseFormula("x ^ 2 * 2 + x * 3 + 1");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -53,7 +53,7 @@ namespace {
     EXPECT_EQ(s, "2 * x^2 + 3 * x + 1");
   }
 
-  TEST_F(MathUtilTest, simplifyTestTrue4) {
+  TEST_F(MathUtilTest, simplifyTest4) {
     ASTNode* ast = SBML_parseFormula("2 + x");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -61,7 +61,7 @@ namespace {
     EXPECT_EQ(s, "x + 2");
   }
 
-  TEST_F(MathUtilTest, simplifyTestTrue5) {
+  TEST_F(MathUtilTest, simplifyTest5) {
     ASTNode* ast = SBML_parseFormula("2 * x * 3");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -69,7 +69,7 @@ namespace {
     EXPECT_EQ(s, "6 * x");
   }
 
-  TEST_F(MathUtilTest, simplifyTestTrue6) {
+  TEST_F(MathUtilTest, simplifyTest6) {
     ASTNode* ast = SBML_parseFormula("2 * 4 * 5 * x * 3");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -77,7 +77,7 @@ namespace {
     EXPECT_EQ(s, "120 * x");
   }
 
-  TEST_F(MathUtilTest, simplifyTestTrue7) {
+  TEST_F(MathUtilTest, simplifyTest7) {
     ASTNode* ast = SBML_parseFormula("2 + x + 3");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -85,7 +85,7 @@ namespace {
     EXPECT_EQ(s, "x + 5");
   }
 
-  TEST_F(MathUtilTest, simplifyTestTrue8) {
+  TEST_F(MathUtilTest, simplifyTest8) {
     ASTNode* ast = SBML_parseFormula("2 + 4 + x + 3");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -93,7 +93,7 @@ namespace {
     EXPECT_EQ(s, "x + 9");
   }
 
-  TEST_F(MathUtilTest, simplifyTestTrue9) {
+  TEST_F(MathUtilTest, simplifyTest9) {
     ASTNode* ast = SBML_parseFormula("2 * sin(x) * 3 + y + 7 + 4 + z");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -101,7 +101,7 @@ namespace {
     EXPECT_EQ(s, "6 * sin(x) + y + 11 + z");
   }
 
-  TEST_F(MathUtilTest, simplifyTestPowerTrue) {
+  TEST_F(MathUtilTest, simplifyTestPower) {
     ASTNode* ast = SBML_parseFormula("3 * x ^ 1 + 4");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -109,7 +109,7 @@ namespace {
     EXPECT_EQ(s, "3 * x + 4");
   }
 
-  TEST_F(MathUtilTest, simplifyTestPowerTrue2) {
+  TEST_F(MathUtilTest, simplifyTestPower2) {
     ASTNode* ast = SBML_parseFormula("3 * x ^ 0 + 4");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -117,7 +117,7 @@ namespace {
     EXPECT_EQ(s, "7");
   }
 
-  TEST_F(MathUtilTest, simplifyTestPowerTrue3) {
+  TEST_F(MathUtilTest, simplifyTestPower3) {
     ASTNode* ast = SBML_parseFormula("(2 * 1 * pow(x, 2 - 1) + 0 * x + 3 * 1 + 0)");
     ast->reduceToBinary();
     ASTNode* simp = MathUtil::simplify(ast);
@@ -131,6 +131,14 @@ namespace {
     ASTNode* simp = MathUtil::simplify(ast);
     std::string s = SBML_formulaToString(simp);
     EXPECT_NE(s, "2 * x + 7 * y");
+  }
+
+  TEST_F(MathUtilTest, simplifyTestOneArg) {
+    ASTNode* ast = SBML_parseFormula("sin(2 * x * 3)");
+    ast->reduceToBinary();
+    ASTNode* simp = MathUtil::simplify(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_NE(s, "sin(6 * x)");
   }
 
   TEST_F(MathUtilTest, differentiateTestAdd) {
