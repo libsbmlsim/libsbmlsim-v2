@@ -16,6 +16,10 @@ void RuntimeExceptionUtil::throwInvalidFlowException() {
   throwRuntimeException("[RuntimeException] Invalid flow");
 }
 
+void RuntimeExceptionUtil::throwArithmeticException() {
+  throwRuntimeException("[RuntimeException] Arithmetic exception");
+}
+
 void RuntimeExceptionUtil::throwRuntimeException(const std::string &message) {
   throw std::runtime_error(message);
 }

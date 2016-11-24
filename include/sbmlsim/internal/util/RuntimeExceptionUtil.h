@@ -8,6 +8,7 @@ class RuntimeExceptionUtil {
   static void throwUnknownNodeTypeException(int nodeType);
   static void throwUnknownNodeNameException(const std::string &nodeName);
   static void throwInvalidFlowException();
+  static void throwArithmeticException();
   private:
   static void throwRuntimeException(const std::string &message);
 };
