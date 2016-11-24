@@ -31,11 +31,6 @@ long long MathUtil::ceil(double f) {
 
 ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
   ASTNode *rtn = new ASTNode();
-  ASTNode *tmp2, *tmp3, *tmp4;
-  ASTNode *left, *right;
-  ASTNode *ll, *lr;
-  ASTNode *rl, *rr;
-  ASTNode *tmpl, *tmpr;
 
   if (containsTarget(ast, target) == 0) {
     rtn->setType(AST_INTEGER);
@@ -56,19 +51,20 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       rtn->addChild(differentiate(ast->getLeftChild(), target));
       rtn->addChild(differentiate(ast->getRightChild(), target));
       break;
-    case AST_TIMES:
+    case AST_TIMES: {
       // d{u*v}/dx = u * dv/dx + v * du/dx
       rtn->setType(AST_PLUS);
-      left = new ASTNode(AST_TIMES);
+      ASTNode *left = new ASTNode(AST_TIMES);
       left->addChild(differentiate(ast->getLeftChild(), target));
       left->addChild(ast->getRightChild()->deepCopy());
       rtn->addChild(left);
-      right = new ASTNode(AST_TIMES);
+      ASTNode *right = new ASTNode(AST_TIMES);
       right->addChild(ast->getLeftChild()->deepCopy());
       right->addChild(differentiate(ast->getRightChild(), target));
       rtn->addChild(right);
       break;
-    case AST_DIVIDE:
+    }
+    case AST_DIVIDE: {
       // d{u/v}/dx = (v * du/dx - u * dv/dx) / v^2
       rtn->setType(AST_DIVIDE);
       if (containsTarget(ast->getRightChild(), target) == 0) {
@@ -76,29 +72,30 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
         rtn->addChild(ast->getRightChild()->deepCopy());
         break;
       }
-      left = new ASTNode(AST_MINUS);
-      ll = new ASTNode(AST_TIMES);
-      lr = new ASTNode(AST_TIMES);
+      ASTNode *left = new ASTNode(AST_MINUS);
+      ASTNode *ll = new ASTNode(AST_TIMES);
+      ASTNode *lr = new ASTNode(AST_TIMES);
       ll->addChild(differentiate(ast->getLeftChild(), target));
       ll->addChild(ast->getRightChild()->deepCopy());
       lr->addChild(ast->getLeftChild()->deepCopy());
       lr->addChild(differentiate(ast->getRightChild(), target));
       left->addChild(ll);
       left->addChild(lr);
-      right = new ASTNode(AST_FUNCTION_POWER);
+      ASTNode *right = new ASTNode(AST_FUNCTION_POWER);
       right->addChild(ast->getRightChild()->deepCopy());
-      rr = new ASTNode(AST_INTEGER);
+      ASTNode *rr = new ASTNode(AST_INTEGER);
       rr->setValue(2);
       right->addChild(rr);
       rtn->addChild(left);
       rtn->addChild(right);
       break;
+    }
     case AST_FUNCTION_POWER:
     case AST_POWER: {
       // d{u^v}/dx = v * u^(v-1) * du/dx + u^v * ln(u) * dv/dx
       rtn->setType(AST_PLUS);
       // LHS
-      left = new ASTNode(AST_TIMES);
+      ASTNode *left = new ASTNode(AST_TIMES);
       ASTNode *minus = new ASTNode(AST_MINUS);
       ASTNode *one = new ASTNode(AST_INTEGER);
       one->setValue(1);
@@ -107,18 +104,18 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *power = new ASTNode(AST_POWER);
       power->addChild(ast->getLeftChild()->deepCopy()); // add u
       power->addChild(minus);
-      ll = new ASTNode(AST_TIMES);
+      ASTNode *ll = new ASTNode(AST_TIMES);
       ll->addChild(ast->getRightChild()->deepCopy());  // add v
       ll->addChild(power);
-      lr = differentiate(ast->getLeftChild(), target); // du/dx
+      ASTNode *lr = differentiate(ast->getLeftChild(), target); // du/dx
       left->addChild(ll);
       left->addChild(lr);
       // RHS
-      right = new ASTNode(AST_TIMES);
-      rl = new ASTNode(AST_POWER);
+      ASTNode *right = new ASTNode(AST_TIMES);
+      ASTNode *rl = new ASTNode(AST_POWER);
       rl->addChild(ast->getLeftChild()->deepCopy());  // add u
       rl->addChild(ast->getRightChild()->deepCopy()); // add v
-      rr = new ASTNode(AST_TIMES);
+      ASTNode *rr = new ASTNode(AST_TIMES);
       ASTNode *ln = new ASTNode(AST_FUNCTION_LN);
       ln->addChild(ast->getLeftChild()->deepCopy());  // add u
       rr->addChild(ln);
@@ -130,89 +127,96 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       rtn->addChild(right);
       break;
     }
-    case AST_FUNCTION_ROOT:
+    case AST_FUNCTION_ROOT: {
       rtn->setType(AST_TIMES);
-      left = differentiate(ast->getLeftChild(), target);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
       rtn->addChild(left);
-      right = new ASTNode(AST_TIMES);
-      tmp2 = new ASTNode(AST_REAL);
+      ASTNode *right = new ASTNode(AST_TIMES);
+      ASTNode *tmp2 = new ASTNode(AST_REAL);
       tmp2->setValue(0.5);
       right->addChild(tmp2);
       tmp2 = new ASTNode(AST_FUNCTION_POWER);
       tmp2->addChild(ast->getLeftChild()->deepCopy());
-      tmp3 = new ASTNode(AST_REAL);
+      ASTNode *tmp3 = new ASTNode(AST_REAL);
       tmp3->setValue(-0.5);
       tmp2->addChild(tmp3);
       right->addChild(tmp2);
       break;
-    case AST_FUNCTION_SIN:
+    }
+    case AST_FUNCTION_SIN: {
       // d{sin(u)}/dx = du/dx * cos(u)
       rtn->setType(AST_TIMES);
-      left = differentiate(ast->getLeftChild(), target);
-      right = new ASTNode(AST_FUNCTION_COS);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_FUNCTION_COS);
       right->addChild(ast->getLeftChild()->deepCopy());
       rtn->addChild(left);
       rtn->addChild(right);
       break;
-    case AST_FUNCTION_COS:
+    }
+    case AST_FUNCTION_COS: {
       // d{cos(u)}/dx = -1 * du/dx * sin(u)
       rtn->setType(AST_TIMES);
-      left = new ASTNode(AST_TIMES);
-      ll = new ASTNode(AST_INTEGER);
+      ASTNode *left = new ASTNode(AST_TIMES);
+      ASTNode *ll = new ASTNode(AST_INTEGER);
       ll->setValue(-1);
       left->addChild(ll);
       left->addChild(differentiate(ast->getLeftChild(), target));
-      right = new ASTNode(AST_FUNCTION_SIN);
+      ASTNode *right = new ASTNode(AST_FUNCTION_SIN);
       right->addChild(ast->getLeftChild()->deepCopy());
       rtn->addChild(left);
       rtn->addChild(right);
       break;
-    case AST_FUNCTION_TAN:
+    }
+    case AST_FUNCTION_TAN: {
       // d{tan(u)}/dx = du/dx * sec(u)^2
       rtn->setType(AST_TIMES);
-      left = differentiate(ast->getLeftChild(), target);
-      right = new ASTNode(AST_POWER);
-      rl = new ASTNode(AST_FUNCTION_SEC);
-      tmpl = ast->getLeftChild()->deepCopy();
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_POWER);
+      ASTNode *rl = new ASTNode(AST_FUNCTION_SEC);
+      ASTNode *tmpl = ast->getLeftChild()->deepCopy();
       rl->addChild(tmpl);
-      rr = new ASTNode();
+      ASTNode *rr = new ASTNode();
       rr->setValue(2);
       right->addChild(rl);
       right->addChild(rr);
       rtn->addChild(left);
       rtn->addChild(right);
       break;
-    case AST_FUNCTION_SINH:
+    }
+    case AST_FUNCTION_SINH: {
       rtn->setType(AST_TIMES);
-      left = differentiate(ast->getLeftChild(), target);
-      right = new ASTNode(AST_FUNCTION_COSH);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_FUNCTION_COSH);
       right->addChild(ast->getLeftChild()->deepCopy());
       rtn->addChild(left);
       rtn->addChild(right);
       break;
-    case AST_FUNCTION_COSH:
+    }
+    case AST_FUNCTION_COSH: {
       rtn->setType(AST_TIMES);
       rtn->addChild(differentiate(ast->getLeftChild(), target));
-      right = new ASTNode(AST_FUNCTION_SINH);
+      ASTNode *right = new ASTNode(AST_FUNCTION_SINH);
       right->addChild(ast->getLeftChild()->deepCopy());
       rtn->addChild(right);
       break;
-    case AST_FUNCTION_TANH:
+    }
+    case AST_FUNCTION_TANH: {
       rtn->setType(AST_TIMES);
       rtn->addChild(differentiate(ast->getLeftChild(), target));
-      right = new ASTNode(AST_DIVIDE);
-      tmp2 = new ASTNode(AST_INTEGER);
+      ASTNode *right = new ASTNode(AST_DIVIDE);
+      ASTNode *tmp2 = new ASTNode(AST_INTEGER);
       tmp2->setValue(1);
       right->addChild(tmp2);
-      tmp4 = new ASTNode(AST_FUNCTION_POWER);
-      tmp3 = new ASTNode(AST_FUNCTION_COSH);
-      tmp3->addChild(ast->getLeftChild()->deepCopy());
-      tmp4->addChild(tmp3);
-      tmp3 = new ASTNode(AST_INTEGER);
-      tmp3->setValue(2);
-      tmp4->addChild(tmp3);
+      ASTNode *tmp4 = new ASTNode(AST_FUNCTION_POWER);
+      ASTNode *cosh = new ASTNode(AST_FUNCTION_COSH);
+      cosh->addChild(ast->getLeftChild()->deepCopy());
+      tmp4->addChild(cosh);
+      ASTNode *two = new ASTNode(AST_INTEGER);
+      two->setValue(2);
+      tmp4->addChild(two);
       right->addChild(tmp4);
       break;
+    }
     case AST_REAL:
     case AST_INTEGER:
     case AST_NAME_TIME:
@@ -255,16 +259,32 @@ bool MathUtil::containsTarget(const ASTNode *ast, std::string target)
 
 ASTNode* MathUtil::simplify(const ASTNode *ast) {
   ASTNodeType_t type = ast->getType();
-  ASTNode *left, *right, *tmp, *tmpl, *tmpr;
-  ASTNode *ll, *lr;
+  ASTNode *left, *right, *simplifiedRoot, *tmpl, *tmpr;
 
-  if ((ast->getLeftChild() == nullptr) || (ast->getRightChild() == nullptr)) {
+  if ((!ast->isOperator())
+    && (ast->getType() != AST_FUNCTION_POWER)
+    && (ast->getType() != AST_POWER)
+    && (ast->getType() != AST_FUNCTION_LN)
+    ) {
     return ast->deepCopy();
   }
 
   left  = simplify(ast->getLeftChild());
-  right = simplify(ast->getRightChild());
   auto left_val = left->getValue();
+
+  // AST_FUNCTION_LN only has 1 argument
+  if (ast->getType() == AST_FUNCTION_LN) {
+    if (ast->getLeftChild()->getType() == AST_CONSTANT_E) {
+      simplifiedRoot = new ASTNode();
+      simplifiedRoot->setValue(1);
+      return simplifiedRoot;
+    } else {
+      return ast->deepCopy();
+    }
+  }
+
+  // take care on 2nd argument
+  right = simplify(ast->getRightChild());
   auto right_val = right->getValue();
 
   switch (type) {
@@ -275,14 +295,14 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
           return right->deepCopy();
         } else if (right->isNumber()) {
           right_val   = right->getValue();
-          tmp = new ASTNode();
-          tmp->setValue(left_val+right_val);
-          return tmp;
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(left_val+right_val);
+          return simplifiedRoot;
         } else if (right->getType() != AST_PLUS){  // left is an integer, right is not AST_PLUS. (3 + x) => (x + 3)
-          tmp = new ASTNode(AST_PLUS);
-          tmp->addChild(right->deepCopy());
-          tmp->addChild(left->deepCopy());
-          return tmp;
+          simplifiedRoot = new ASTNode(AST_PLUS);
+          simplifiedRoot->addChild(right->deepCopy());
+          simplifiedRoot->addChild(left->deepCopy());
+          return simplifiedRoot;
         }
       }
       if (right->isNumber()) { // left is not an integer
@@ -294,26 +314,26 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
       // merge "2 + x + 3" to "x + 5"
       if (left->getType() == AST_PLUS) {
         if (left->getRightChild()->isNumber() && right->isNumber()) {
-          tmp = new ASTNode(AST_PLUS);
+          simplifiedRoot = new ASTNode(AST_PLUS);
           tmpl = left->getLeftChild()->deepCopy();
           tmpr = new ASTNode(AST_PLUS);
           tmpr->addChild(right->deepCopy());
           tmpr->addChild(left->getRightChild()->deepCopy());
-          tmp->addChild(tmpl);
-          tmp->addChild(simplify(tmpr));
-          return tmp;
+          simplifiedRoot->addChild(tmpl);
+          simplifiedRoot->addChild(simplify(tmpr));
+          return simplifiedRoot;
         }
       }
       if (right->getType() == AST_PLUS) {
         if (right->getRightChild()->isNumber() && left->isNumber()) {
-          tmp = new ASTNode(AST_PLUS);
+          simplifiedRoot = new ASTNode(AST_PLUS);
           tmpl = right->getLeftChild()->deepCopy();
           tmpr = new ASTNode(AST_PLUS);
           tmpr->addChild(left->deepCopy());
           tmpr->addChild(right->getRightChild()->deepCopy());
-          tmp->addChild(tmpl);
-          tmp->addChild(simplify(tmpr));
-          return tmp;
+          simplifiedRoot->addChild(tmpl);
+          simplifiedRoot->addChild(simplify(tmpr));
+          return simplifiedRoot;
         }
       }
       break;
@@ -324,9 +344,9 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
           return left->deepCopy();
         } else if (left->isNumber()) {
           left_val   = left->getValue();
-          tmp = new ASTNode();
-          tmp->setValue(left_val-right_val);
-          return tmp;
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(left_val-right_val);
+          return simplifiedRoot;
         }
       }
       break;
@@ -334,56 +354,56 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
       if (left->isNumber()) {
         left_val = left->getValue();
         if (left_val == 0.0) {
-          tmp = new ASTNode();
-          tmp->setValue(0);
-          return tmp;
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(0);
+          return simplifiedRoot;
         } else if (left_val == 1.0) {
           return right->deepCopy();
         } else if (right->isNumber()) {
           right_val   = right->getValue();
-          tmp = new ASTNode();
-          tmp->setValue(left_val*right_val);
-          return tmp;
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(left_val*right_val);
+          return simplifiedRoot;
         }
       }
       if (right->isNumber()) { // left is not an integer
         right_val = right->getValue();
         if (right_val == 0.0) {
-          tmp = new ASTNode();
-          tmp->setValue(0);
-          return tmp;
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(0);
+          return simplifiedRoot;
         } else if (right_val == 1.0) {
           return left->deepCopy();
         } else if (left->getType() != AST_TIMES){   // left is not AST_TIMES, right is an integer. (x * 2) => (2 * x)
-          tmp = new ASTNode(AST_TIMES);
-          tmp->addChild(right->deepCopy());
-          tmp->addChild(left->deepCopy());
-          return tmp;
+          simplifiedRoot = new ASTNode(AST_TIMES);
+          simplifiedRoot->addChild(right->deepCopy());
+          simplifiedRoot->addChild(left->deepCopy());
+          return simplifiedRoot;
         }
       }
       // merge "2 * x * 3" to "6 * x"
       if (left->getType() == AST_TIMES) {
         if (left->getLeftChild()->isNumber() && right->isNumber()) {
-          tmp = new ASTNode(AST_TIMES);
+          simplifiedRoot = new ASTNode(AST_TIMES);
           tmpl = new ASTNode(AST_TIMES);
           tmpl->addChild(left->getLeftChild()->deepCopy());
           tmpl->addChild(right->deepCopy());
           tmpr = left->getRightChild()->deepCopy();
-          tmp->addChild(simplify(tmpl));
-          tmp->addChild(tmpr);
-          return tmp;
+          simplifiedRoot->addChild(simplify(tmpl));
+          simplifiedRoot->addChild(tmpr);
+          return simplifiedRoot;
         }
       }
       if (right->getType() == AST_TIMES) {
         if (right->getLeftChild()->isNumber() && left->isNumber()) {
-          tmp = new ASTNode(AST_TIMES);
+          simplifiedRoot = new ASTNode(AST_TIMES);
           tmpl = new ASTNode(AST_TIMES);
           tmpl->addChild(right->getLeftChild()->deepCopy());
           tmpl->addChild(left->deepCopy());
           tmpr = right->getRightChild()->deepCopy();
-          tmp->addChild(simplify(tmpl));
-          tmp->addChild(tmpr);
-          return tmp;
+          simplifiedRoot->addChild(simplify(tmpl));
+          simplifiedRoot->addChild(tmpr);
+          return simplifiedRoot;
         }
       }
       break; // can't simplify
@@ -391,14 +411,14 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
       if (left->isNumber()) {
         left_val = left->getValue();
         if (left_val == 0.0) {
-          tmp = new ASTNode();
-          tmp->setValue(0);
-          return tmp;
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(0);
+          return simplifiedRoot;
         } else if (right->isNumber()) {
           right_val   = right->getValue();
-          tmp = new ASTNode();
-          tmp->setValue((double)left_val/right_val);
-          return tmp;
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue((double)left_val/right_val);
+          return simplifiedRoot;
         }
       }
       if (right->isNumber()) { // left is not an integer
@@ -413,34 +433,34 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
       if (right->isNumber()) {
         right_val = right->getValue();
         if (right_val == 0.0) {
-          tmp = new ASTNode();
-          tmp->setValue(1);
-          return tmp;
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(1);
+          return simplifiedRoot;
         } else if (right_val == 1.0) {
           return left->deepCopy();
         }
       }
       if (left->getType() == AST_FUNCTION_POWER || left->getType() == AST_POWER) {  // pow(pow(x, 2), 3) => pow(x, 2*3)
-        tmp = new ASTNode(AST_POWER);
-        tmp->addChild(left->getLeftChild()->deepCopy());
+        simplifiedRoot = new ASTNode(AST_POWER);
+        simplifiedRoot->addChild(left->getLeftChild()->deepCopy());
         tmpr = new ASTNode(AST_TIMES);
         tmpr->addChild(left->getRightChild());
         tmpr->addChild(right->deepCopy());
-        tmp->addChild(tmpr);
-        return simplify(tmp);
+        simplifiedRoot->addChild(tmpr);
+        return simplify(simplifiedRoot);
       }
       if (type == AST_FUNCTION_POWER) { // convert pow(x, y) to x ^ y
-        tmp = new ASTNode(AST_POWER);
-        tmp->addChild(left->deepCopy());
-        tmp->addChild(right->deepCopy());
-        return tmp;
+        simplifiedRoot = new ASTNode(AST_POWER);
+        simplifiedRoot->addChild(left->deepCopy());
+        simplifiedRoot->addChild(right->deepCopy());
+        return simplifiedRoot;
       }
       break; // can't simplify
     default:
       break;
   }
-  tmp = new ASTNode(type);
-  tmp->addChild(left);
-  tmp->addChild(right);
-  return tmp;
+  simplifiedRoot = new ASTNode(type);
+  simplifiedRoot->addChild(left);
+  simplifiedRoot->addChild(right);
+  return simplifiedRoot;
 }
