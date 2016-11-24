@@ -1,9 +1,12 @@
 #include "sbmlsim/internal/wrapper/SpeciesReferenceWrapper.h"
+#include "sbmlsim/internal/util/ASTNodeUtil.h"
 
 SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReference *speciesReference) {
   this->speciesId = speciesReference->getSpecies();
   if (speciesReference->isSetStoichiometryMath()) {
-    this->stoichiometryMath = speciesReference->getStoichiometryMath()->getMath()->deepCopy();
+    this->stoichiometryMath = ASTNodeUtil::rewriteFunctionDefinition(
+        speciesReference->getStoichiometryMath()->getMath(),
+        speciesReference->getModel()->getListOfFunctionDefinitions());
     this->stoichiometryType = StoichiometryType::MATH;
   } else if (speciesReference->isSetStoichiometry()) {
     this->stoichiometry = speciesReference->getStoichiometry();

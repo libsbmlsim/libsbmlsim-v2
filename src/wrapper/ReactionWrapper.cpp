@@ -1,4 +1,5 @@
 #include "sbmlsim/internal/wrapper/ReactionWrapper.h"
+#include "sbmlsim/internal/util/ASTNodeUtil.h"
 
 ReactionWrapper::ReactionWrapper(const Reaction *reaction) {
   this->id = reaction->getId();
@@ -10,8 +11,10 @@ ReactionWrapper::ReactionWrapper(const Reaction *reaction) {
     auto product = reaction->getProduct(i);
     this->products.push_back(SpeciesReferenceWrapper(product));
   }
+
   auto node = reaction->getKineticLaw()->getMath();
-  this->math = node->deepCopy();
+  auto model = reaction->getModel();
+  this->math = ASTNodeUtil::rewriteFunctionDefinition(node, model->getListOfFunctionDefinitions());
 }
 
 ReactionWrapper::ReactionWrapper(const ReactionWrapper &reaction) {

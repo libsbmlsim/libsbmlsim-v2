@@ -1,8 +1,11 @@
 #include "sbmlsim/internal/wrapper/RateRuleWrapper.h"
+#include "sbmlsim/internal/util/ASTNodeUtil.h"
 
 RateRuleWrapper::RateRuleWrapper(const RateRule *rateRule) {
   this->variable = rateRule->getVariable();
-  this->math = rateRule->getMath()->deepCopy();
+  this->math = ASTNodeUtil::rewriteFunctionDefinition(
+      rateRule->getMath(),
+      rateRule->getModel()->getListOfFunctionDefinitions());
 }
 
 RateRuleWrapper::RateRuleWrapper(const RateRuleWrapper &rateRule) {

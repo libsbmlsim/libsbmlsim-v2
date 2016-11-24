@@ -1,8 +1,11 @@
 #include "sbmlsim/internal/wrapper/InitialAssignmentWrapper.h"
+#include "sbmlsim/internal/util/ASTNodeUtil.h"
 
 InitialAssignmentWrapper::InitialAssignmentWrapper(const InitialAssignment *initialAssignment) {
   this->symbol = initialAssignment->getSymbol();
-  this->math = initialAssignment->getMath()->deepCopy();
+  this->math = ASTNodeUtil::rewriteFunctionDefinition(
+      initialAssignment->getMath(),
+      initialAssignment->getModel()->getListOfFunctionDefinitions());
 }
 
 InitialAssignmentWrapper::InitialAssignmentWrapper(const InitialAssignmentWrapper &initialAssignment) {

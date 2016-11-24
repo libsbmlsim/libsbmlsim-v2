@@ -1,8 +1,11 @@
 #include "sbmlsim/internal/wrapper/EventAssignmentWrapper.h"
+#include "sbmlsim/internal/util/ASTNodeUtil.h"
 
 EventAssignmentWrapper::EventAssignmentWrapper(const EventAssignment *eventAssignment) {
   this->variable = eventAssignment->getVariable();
-  this->math = eventAssignment->getMath()->deepCopy();
+  this->math = ASTNodeUtil::rewriteFunctionDefinition(
+      eventAssignment->getMath(),
+      eventAssignment->getModel()->getListOfFunctionDefinitions());
 }
 
 EventAssignmentWrapper::EventAssignmentWrapper(const EventAssignmentWrapper &eventAssignment) {

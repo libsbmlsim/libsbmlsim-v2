@@ -1,8 +1,11 @@
 #include "sbmlsim/internal/wrapper/AssignmentRuleWrapper.h"
+#include "sbmlsim/internal/util/ASTNodeUtil.h"
 
 AssignmentRuleWrapper::AssignmentRuleWrapper(const AssignmentRule *assignmentRule) {
   this->variable = assignmentRule->getVariable();
-  this->math = assignmentRule->getMath()->deepCopy();
+  this->math = ASTNodeUtil::rewriteFunctionDefinition(
+      assignmentRule->getMath(),
+      assignmentRule->getModel()->getListOfFunctionDefinitions());
 }
 
 AssignmentRuleWrapper::AssignmentRuleWrapper(const AssignmentRuleWrapper &assignmentRule) {

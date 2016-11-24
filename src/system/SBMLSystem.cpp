@@ -32,10 +32,11 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
   for (auto i = 0; i < reactions.size(); i++) {
     auto reaction = reactions[i];
     auto node = reaction.getMath();
+
     auto clonedNode = node->deepCopy();
     clonedNode->reduceToBinary();
-
     auto value = evaluateASTNode(clonedNode, i, x);
+    delete clonedNode;
 
     // reactants
     for (auto reactant : reaction.getReactants()) {
@@ -202,8 +203,6 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const
       left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
       right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
       return MathUtil::pow(left, right);
-    case AST_FUNCTION:
-      return evaluateFunctionNode(node, reactionIndex, x);
     case AST_REAL:
       return node->getReal();
     case AST_INTEGER:
@@ -270,25 +269,6 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
     }
   }
 
-  return 0.0;
-}
-
-double SBMLSystem::evaluateFunctionNode(const ASTNode *node, int reactionIndex, const state &x) {
-  auto name = node->getName();
-  for (auto functionDefinition : model->getFunctionDefinitions()) {
-    if (name == functionDefinition->getName()) {
-      auto body = functionDefinition->getBody()->deepCopy();
-      auto arguments = functionDefinition->getArguments();
-      for (auto i = 0; i < arguments.size(); i++) {
-        body->replaceArgument(arguments[i], node->getChild(i));
-      }
-      auto value = evaluateASTNode(body, reactionIndex, x);
-      delete body;
-      return value;
-    }
-  }
-
-  // not reachable
   return 0.0;
 }
 

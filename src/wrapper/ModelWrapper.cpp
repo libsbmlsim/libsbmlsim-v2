@@ -35,12 +35,6 @@ ModelWrapper::ModelWrapper(const Model *model) {
     this->reactions.push_back(ReactionWrapper(reaction));
   }
 
-  // function definitions
-  for (auto i = 0; i < model->getNumFunctionDefinitions(); i++) {
-    auto functionDefinition = model->getFunctionDefinition(i);
-    this->functionDefinitions.push_back(new FunctionDefinitionWrapper(functionDefinition));
-  }
-
   // events
   for (auto i = 0; i < model->getNumEvents(); i++) {
     auto event = model->getEvent(i);
@@ -71,7 +65,6 @@ ModelWrapper::ModelWrapper(const ModelWrapper &model) {
   this->parameters = model.parameters;
   this->compartments = model.compartments;
   this->reactions = model.reactions;
-  this->functionDefinitions = model.functionDefinitions;
   this->events = model.events;
   this->initialAssignments = model.initialAssignments;
   this->assignmentRules = model.assignmentRules;
@@ -87,11 +80,6 @@ ModelWrapper::~ModelWrapper() {
 
   this->compartments.clear();
   this->reactions.clear();
-
-  for (auto functionDefinition : this->functionDefinitions) {
-    delete functionDefinition;
-  }
-  this->functionDefinitions.clear();
 
   for (auto event : this->events) {
     delete event;
@@ -123,10 +111,6 @@ const std::vector<CompartmentWrapper> &ModelWrapper::getCompartments() const {
 
 const std::vector<ReactionWrapper> &ModelWrapper::getReactions() const {
   return this->reactions;
-}
-
-std::vector<FunctionDefinitionWrapper *> &ModelWrapper::getFunctionDefinitions() {
-  return this->functionDefinitions;
 }
 
 std::vector<EventWrapper *> &ModelWrapper::getEvents() {

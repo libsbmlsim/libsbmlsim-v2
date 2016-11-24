@@ -8,7 +8,6 @@
 #include "sbmlsim/internal/wrapper/ParameterWrapper.h"
 #include "sbmlsim/internal/wrapper/CompartmentWrapper.h"
 #include "sbmlsim/internal/wrapper/ReactionWrapper.h"
-#include "sbmlsim/internal/wrapper/FunctionDefinitionWrapper.h"
 #include "sbmlsim/internal/wrapper/EventWrapper.h"
 #include "sbmlsim/internal/wrapper/InitialAssignmentWrapper.h"
 #include "sbmlsim/internal/wrapper/AssignmentRuleWrapper.h"
@@ -23,7 +22,6 @@ class ModelWrapper {
   std::vector<ParameterWrapper *> &getParameters();
   const std::vector<CompartmentWrapper> &getCompartments() const;
   const std::vector<ReactionWrapper> &getReactions() const;
-  std::vector<FunctionDefinitionWrapper *> &getFunctionDefinitions();
   std::vector<EventWrapper *> &getEvents();
   std::vector<InitialAssignmentWrapper *> &getInitialAssignments();
   std::vector<AssignmentRuleWrapper *> &getAssignmentRules();
@@ -33,7 +31,6 @@ class ModelWrapper {
   std::vector<ParameterWrapper *> parameters;
   std::vector<CompartmentWrapper> compartments;
   std::vector<ReactionWrapper> reactions;
-  std::vector<FunctionDefinitionWrapper *> functionDefinitions;
   std::vector<EventWrapper *> events;
   std::vector<InitialAssignmentWrapper *> initialAssignments;
   std::vector<AssignmentRuleWrapper *> assignmentRules;
