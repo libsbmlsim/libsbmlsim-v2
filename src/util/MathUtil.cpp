@@ -182,6 +182,44 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       rtn->addChild(right);
       break;
     }
+    case AST_FUNCTION_SEC: {
+      /* d{sec(u)}/dx = du/dx * sec(u) * tan(u) */
+      rtn->setType(AST_TIMES);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_TIMES);
+      ASTNode *rl = new ASTNode(AST_FUNCTION_SEC);
+      rl->addChild(ast->getLeftChild()->deepCopy());
+      ASTNode *rr = new ASTNode(AST_FUNCTION_TAN);
+      rr->addChild(ast->getLeftChild()->deepCopy());
+      right->addChild(rl);
+      right->addChild(rr);
+      rtn->addChild(left);
+      rtn->addChild(right);
+      break;
+    }
+    case AST_FUNCTION_COT: {
+      /* d{cot(u)}/dx = -1 * du/dx * cosec(u)^2   */
+      /*              = -1 * du/dx / sin(u)^2 */
+      /*     cosec(u) = 1 / sin(u) */
+      rtn->setType(AST_TIMES);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_DIVIDE);
+      ASTNode *rl = new ASTNode();
+      rl->setValue(-1);
+      ASTNode *rr = new ASTNode(AST_POWER);
+      ASTNode *sin = new ASTNode(AST_FUNCTION_SIN);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      ASTNode *u = ast->getLeftChild()->deepCopy();
+      sin->addChild(u);
+      rr->addChild(sin);
+      rr->addChild(two);
+      right->addChild(rl);
+      right->addChild(rr);
+      rtn->addChild(left);
+      rtn->addChild(right);
+      break;
+    }
     case AST_FUNCTION_SINH: {
       /* d{sinh(u)}/dx = du/dx * cosh(u) */
       rtn->setType(AST_TIMES);
