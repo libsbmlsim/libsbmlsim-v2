@@ -363,6 +363,93 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       rtn->addChild(right);
       break;
     }
+    case AST_FUNCTION_ARCSEC: {
+      /* d{arcsec(u)}/dx = du/dx / (|u| * sqrt(u^2 - 1)) */
+      rtn->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_TIMES);
+      ASTNode *abs = new ASTNode();
+      abs->setType(AST_FUNCTION_ABS);
+      ASTNode *root = new ASTNode(AST_FUNCTION_ROOT);
+      ASTNode *square = new ASTNode();
+      square->setValue(2);
+      ASTNode *minus = new ASTNode(AST_MINUS);
+      ASTNode *one = new ASTNode();
+      one->setValue(1);
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(two);
+      minus->addChild(power);
+      minus->addChild(one);
+      root->addChild(two);
+      root->addChild(minus);
+      abs->addChild(ast->getLeftChild()->deepCopy());
+      right->addChild(abs);
+      right->addChild(root);
+      rtn->addChild(left);
+      rtn->addChild(right);
+      break;
+    }
+    case AST_FUNCTION_ARCCSC: {
+      /* d{arccsc(u)}/dx = - du/dx / (|u| * sqrt(u^2 - 1)) */
+      rtn->setType(AST_TIMES);
+      ASTNode *minusone = new ASTNode();
+      minusone->setValue(-1);
+      ASTNode *divide = new ASTNode(AST_DIVIDE);
+      divide->setType(AST_DIVIDE);
+      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *times = new ASTNode(AST_TIMES);
+      ASTNode *abs = new ASTNode();
+      abs->setType(AST_FUNCTION_ABS);
+      ASTNode *root = new ASTNode(AST_FUNCTION_ROOT);
+      ASTNode *square = new ASTNode();
+      square->setValue(2);
+      ASTNode *minus = new ASTNode(AST_MINUS);
+      ASTNode *one = new ASTNode();
+      one->setValue(1);
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(two);
+      minus->addChild(power);
+      minus->addChild(one);
+      root->addChild(two);
+      root->addChild(minus);
+      abs->addChild(ast->getLeftChild()->deepCopy());
+      times->addChild(abs);
+      times->addChild(root);
+      divide->addChild(dudx);
+      divide->addChild(times);
+      rtn->addChild(minusone);
+      rtn->addChild(divide);
+      break;
+    }
+    case AST_FUNCTION_ARCCOT: {
+      /* d{arccot(u)}/dx = - du/dx / (1 + u^2) */
+      rtn->setType(AST_TIMES);
+      ASTNode *minusone = new ASTNode();
+      minusone->setValue(-1);
+      ASTNode *divide = new ASTNode(AST_DIVIDE);
+      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *plus = new ASTNode(AST_PLUS);
+      ASTNode *one = new ASTNode();
+      one->setValue(1);
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(two);
+      plus->addChild(one);
+      plus->addChild(power);
+      divide->addChild(dudx);
+      divide->addChild(plus);
+      rtn->addChild(minusone);
+      rtn->addChild(divide);
+      break;
+    }
     case AST_REAL:
     case AST_INTEGER:
     case AST_NAME_TIME:
@@ -378,7 +465,7 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       }
       break;
     default:
-      std::cout << "unknown" << std::endl;
+      std::cout << ast->getType() << " is unknown" << std::endl;
       exit(1);
   }
   rtn->reduceToBinary();
