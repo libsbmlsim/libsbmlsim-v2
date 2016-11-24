@@ -154,6 +154,8 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
     auto &variable = assignmentRules[i]->getVariable();
     auto value = evaluateASTNode(assignmentRules[i]->getMath(), x);
 
+    bool continueImmediately = false;
+
     // species
     auto specieses = model->getSpecieses();
     for (auto i = 0; i < specieses.size(); i++) {
@@ -170,7 +172,12 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
         } else {
           x[speciesIndex] = value;
         }
+        continueImmediately = true;
+        break;
       }
+    }
+    if (continueImmediately) {
+      continue;
     }
 
     // compartment
@@ -179,7 +186,12 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
       if (variable == compartments[i].getId()) {
         auto index = getStateIndexForVariable(compartments[i].getId());
         x[index] = value;
+        continueImmediately = true;
+        break;
       }
+    }
+    if (continueImmediately) {
+      continue;
     }
 
     // global parameter
@@ -188,6 +200,7 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
       if (variable == parameters[i]->getId()) {
         auto index = getStateIndexForVariable(parameters[i]->getId());
         x[index] = value;
+        break;
       }
     }
   }
@@ -251,6 +264,7 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x) {
     case AST_INTEGER:
       return node->getInteger();
     case AST_RATIONAL:
+    case AST_REAL_E:
       return node->getValue();
     case AST_FUNCTION_FACTORIAL:
       return evaluateFactorialNode(node, x);
