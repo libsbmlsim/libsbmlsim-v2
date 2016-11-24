@@ -10,17 +10,7 @@ ModelWrapper::ModelWrapper(const Model *model) {
   // global parameters
   for (auto i = 0; i < model->getNumParameters(); i++) {
     auto parameter = model->getParameter(i);
-    this->parameters.push_back(ParameterWrapper::asGlobalParameter(parameter));
-  }
-
-  // local parameters
-  for (auto i = 0; i < model->getNumReactions(); i++) {
-    auto reaction = model->getReaction(i);
-    auto kineticLaw = reaction->getKineticLaw();
-    for (auto j = 0; j < kineticLaw->getNumParameters(); j++) {
-      auto parameter = kineticLaw->getParameter(j);
-      this->parameters.push_back(ParameterWrapper::asLocalParameter(parameter, reaction));
-    }
+    this->parameters.push_back(new ParameterWrapper(parameter));
   }
 
   // compartments

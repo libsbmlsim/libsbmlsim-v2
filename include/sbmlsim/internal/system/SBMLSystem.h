@@ -32,10 +32,10 @@ class SBMLSystem {
   ModelWrapper *model;
   state initialState;
   std::unordered_map<std::string, unsigned int> stateIndexMap;
-  double evaluateASTNode(const ASTNode *node, int reactionIndex, const state &x);
-  double evaluateNameNode(const ASTNode *node, int reactionIndex, const state &x);
-  double evaluateFunctionNode(const ASTNode *node, int reactionIndex, const state &x);
-  double evaluateFactorialNode(const ASTNode *node, int reactionIndex, const state &x);
+  double evaluateASTNode(const ASTNode *node, const state &x);
+  double evaluateNameNode(const ASTNode *node, const state &x);
+  double evaluateFunctionNode(const ASTNode *node, const state &x);
+  double evaluateFactorialNode(const ASTNode *node, const state &x);
   bool evaluateTriggerNode(const ASTNode *trigger, const state &x);
   void prepareInitialState();
 };

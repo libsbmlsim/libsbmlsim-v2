@@ -6,6 +6,7 @@
 class ASTNodeUtil {
  public:
   static ASTNode *rewriteFunctionDefinition(const ASTNode *node, const ListOfFunctionDefinitions *functionDefinitions);
+  static ASTNode *rewriteLocalParameters(const ASTNode *node, const ListOfParameters *localParameters);
  private:
   ASTNodeUtil() {}
   ~ASTNodeUtil() {}

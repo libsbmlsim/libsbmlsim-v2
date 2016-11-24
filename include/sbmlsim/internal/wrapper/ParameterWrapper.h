@@ -4,32 +4,16 @@
 #include <sbml/SBMLTypes.h>
 #include <string>
 
-enum class ParameterScope;
-
-class ParameterWrapper {
+class ParameterWrapper { // global parameter only
  public:
-  static ParameterWrapper *asGlobalParameter(const Parameter *parameter);
-  static ParameterWrapper *asLocalParameter(const Parameter *parameter, const Reaction *reaction);
+  explicit ParameterWrapper(const Parameter *parameter);
   ParameterWrapper(const ParameterWrapper &parameter);
   ~ParameterWrapper();
   const std::string &getId() const;
-  const std::string &getReactionId() const;
   double getValue() const;
-  bool isGlobalParameter() const;
-  bool isLocalParameter() const;
  private:
-  explicit ParameterWrapper(const Parameter *parameter);
-  ParameterWrapper(const Parameter *parameter, const Reaction *reaction);
- private:
-  std::string id;
-  std::string reactionId;
-  double value;
-  ParameterScope scope;
-};
-
-enum class ParameterScope {
-  GLOBAL,
-  LOCAL
+  const std::string id;
+  const double value;
 };
 
 #endif /* INCLUDE_SBMLSIM_INTERNAL_WRAPPER_PARAMETERWRAPPER_H_ */

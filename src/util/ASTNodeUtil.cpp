@@ -30,3 +30,31 @@ ASTNode *ASTNodeUtil::rewriteFunctionDefinition(const ASTNode *node,
 
   return ret;
 }
+
+ASTNode *ASTNodeUtil::rewriteLocalParameters(const ASTNode *node, const ListOfParameters *localParameters) {
+  ASTNode *ret;
+
+  if (node->getType() == AST_NAME) {
+    auto name = node->getName();
+    for (auto i = 0; i < localParameters->size(); i++) {
+      auto param = localParameters->get(i);
+      if (name == param->getId()) {
+        ret = new ASTNode(AST_REAL);
+        ret->setValue(param->getValue());
+        return ret;
+      }
+    }
+  }
+
+  // if the node doesn't represent local parameter
+
+  ret = node->deepCopy();
+
+  // replace children's local parameter node recursively
+  for (auto i = 0; i < ret->getNumChildren(); i++) {
+    auto newChild = rewriteLocalParameters(ret->getChild(i), localParameters);
+    ret->replaceChild(i, newChild, true);
+  }
+
+  return ret;
+}

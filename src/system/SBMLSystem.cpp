@@ -1,9 +1,7 @@
 #include "sbmlsim/internal/system/SBMLSystem.h"
 #include <algorithm>
-#include <cmath>
 #include "sbmlsim/internal/util/MathUtil.h"
-
-#define UNDEFINED_REACTION_INDEX -1
+#include "sbmlsim/internal/util/RuntimeExceptionUtil.h"
 
 SBMLSystem::SBMLSystem(const ModelWrapper *model) : model(const_cast<ModelWrapper *>(model)) {
   prepareInitialState();
@@ -36,7 +34,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
 
     auto clonedNode = node->deepCopy();
     clonedNode->reduceToBinary();
-    auto value = evaluateASTNode(clonedNode, i, x);
+    auto value = evaluateASTNode(clonedNode, x);
     delete clonedNode;
 
     // reactants
@@ -44,7 +42,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
       auto index = getStateIndexForVariable(reactant.getSpeciesId());
       double stoichiometry;
       if (reactant.hasStoichiometryMath()) {
-        stoichiometry = evaluateASTNode(reactant.getStoichiometryMath(), i, x);
+        stoichiometry = evaluateASTNode(reactant.getStoichiometryMath(), x);
       } else {
         stoichiometry = reactant.getStoichiometry();
       }
@@ -56,7 +54,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
       auto index = getStateIndexForVariable(product.getSpeciesId());
       double stoichiometry;
       if (product.hasStoichiometryMath()) {
-        stoichiometry = evaluateASTNode(product.getStoichiometryMath(), i, x);
+        stoichiometry = evaluateASTNode(product.getStoichiometryMath(), x);
       } else {
         stoichiometry = product.getStoichiometry();
       }
@@ -67,7 +65,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
   // rate rule
   for (auto rateRule : model->getRateRules()) {
     auto index = getStateIndexForVariable(rateRule->getVariable());
-    auto value = evaluateASTNode(rateRule->getMath(), UNDEFINED_REACTION_INDEX, x);
+    auto value = evaluateASTNode(rateRule->getMath(), x);
     dxdt[index] = value;
   }
 
@@ -88,7 +86,7 @@ void SBMLSystem::handleEvent(state &x, double t) {
       for (auto eventAssignment : event->getEventAssignments()) {
         auto variable = eventAssignment.getVariable();
         auto index = getStateIndexForVariable(variable);
-        double value = evaluateASTNode(eventAssignment.getMath(), UNDEFINED_REACTION_INDEX, x);
+        double value = evaluateASTNode(eventAssignment.getMath(), x);
         x[index] = value;
         event->setTriggerState(true);
       }
@@ -105,7 +103,7 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
 
   for (auto initialAssignment : model->getInitialAssignments()) {
     auto symbol = initialAssignment->getSymbol();
-    auto value = evaluateASTNode(initialAssignment->getMath(), UNDEFINED_REACTION_INDEX, x);
+    auto value = evaluateASTNode(initialAssignment->getMath(), x);
 
     // species
     auto specieses = model->getSpecieses();
@@ -128,7 +126,7 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
     // global parameter
     auto parameters = model->getParameters();
     for (auto i = 0; i < parameters.size(); i++) {
-      if (parameters[i]->isGlobalParameter() && symbol == parameters[i]->getId()) {
+      if (symbol == parameters[i]->getId()) {
         auto index = getStateIndexForVariable(parameters[i]->getId());
         x[index] = value;
       }
@@ -144,7 +142,7 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
   auto &assignmentRules = this->model->getAssignmentRules();
   for (auto i = 0; i < assignmentRules.size(); i++) {
     auto &variable = assignmentRules[i]->getVariable();
-    auto value = evaluateASTNode(assignmentRules[i]->getMath(), UNDEFINED_REACTION_INDEX, x);
+    auto value = evaluateASTNode(assignmentRules[i]->getMath(), x);
 
     // species
     auto specieses = model->getSpecieses();
@@ -167,7 +165,7 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
     // global parameter
     auto parameters = model->getParameters();
     for (auto i = 0; i < parameters.size(); i++) {
-      if (parameters[i]->isGlobalParameter() && variable == parameters[i]->getId()) {
+      if (variable == parameters[i]->getId()) {
         auto index = getStateIndexForVariable(parameters[i]->getId());
         x[index] = value;
       }
@@ -200,33 +198,33 @@ std::vector<ObserveTarget> SBMLSystem::createOutputTargetsFromOutputFields(
   return ret;
 }
 
-double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const state& x) {
+double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x) {
   double left, right;
 
   ASTNodeType_t type = node->getType();
   switch (type) {
     case AST_NAME:
-      return evaluateNameNode(node, reactionIndex, x);
+      return evaluateNameNode(node, x);
     case AST_PLUS:
-      left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
-      right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
+      left = evaluateASTNode(node->getLeftChild(), x);
+      right = evaluateASTNode(node->getRightChild(), x);
       return left + right;
     case AST_MINUS:
-      left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
-      right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
+      left = evaluateASTNode(node->getLeftChild(), x);
+      right = evaluateASTNode(node->getRightChild(), x);
       return left - right;
     case AST_TIMES:
-      left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
-      right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
+      left = evaluateASTNode(node->getLeftChild(), x);
+      right = evaluateASTNode(node->getRightChild(), x);
       return left * right;
     case AST_DIVIDE:
-      left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
-      right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
+      left = evaluateASTNode(node->getLeftChild(), x);
+      right = evaluateASTNode(node->getRightChild(), x);
       return left / right;
     case AST_POWER:
     case AST_FUNCTION_POWER:
-      left = evaluateASTNode(node->getLeftChild(), reactionIndex, x);
-      right = evaluateASTNode(node->getRightChild(), reactionIndex, x);
+      left = evaluateASTNode(node->getLeftChild(), x);
+      right = evaluateASTNode(node->getRightChild(), x);
       return MathUtil::pow(left, right);
     case AST_REAL:
       return node->getReal();
@@ -235,9 +233,9 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const
     case AST_RATIONAL:
       return node->getValue();
     case AST_FUNCTION_FACTORIAL:
-      return evaluateFactorialNode(node, reactionIndex, x);
+      return evaluateFactorialNode(node, x);
     case AST_FUNCTION_CEILING:
-      return MathUtil::ceil(evaluateASTNode(node->getLeftChild(), reactionIndex, x));
+      return MathUtil::ceil(evaluateASTNode(node->getLeftChild(), x));
     default:
       std::cout << "type = " << type << std::endl;
       break;
@@ -245,21 +243,8 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const
   return 0;
 }
 
-double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, const state &x) {
+double SBMLSystem::evaluateNameNode(const ASTNode *node, const state &x) {
   auto name = node->getName();
-
-  // local parameter
-  if (reactionIndex != UNDEFINED_REACTION_INDEX) {
-    auto reactionId = model->getReactions().at(reactionIndex).getId();
-    auto parameters = model->getParameters();
-    for (auto i = 0; i < parameters.size(); i++) {
-      if (parameters[i]->isLocalParameter()
-          && name == parameters[i]->getId()
-          && reactionId == parameters[i]->getReactionId()) {
-        return parameters[i]->getValue();
-      }
-    }
-  }
 
   // species
   auto specieses = model->getSpecieses();
@@ -293,44 +278,52 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
   // global parameter
   auto parameters = model->getParameters();
   for (auto i = 0; i < parameters.size(); i++) {
-    if (parameters[i]->isGlobalParameter() && name == parameters[i]->getId()) {
+    if (name == parameters[i]->getId()) {
       auto index = getStateIndexForVariable(parameters[i]->getId());
       return x[index];
     }
   }
 
+  // not reachable
+  RuntimeExceptionUtil::throwUnknownNodeNameException(name);
   return 0.0;
 }
 
-double SBMLSystem::evaluateFactorialNode(const ASTNode *node, int reactionIndex, const state &x) {
+double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x) {
   const ASTNode *left = node->getLeftChild();
   long long leftValue;
   ASTNodeType_t leftType = left->getType();
   switch (leftType) {
     case AST_FUNCTION_CEILING:
-      leftValue = MathUtil::ceil(evaluateASTNode(left->getLeftChild(), reactionIndex, x));
+      leftValue = MathUtil::ceil(evaluateASTNode(left->getLeftChild(), x));
       return MathUtil::factorial(leftValue);
     default:
-      std::cout << "type = " << leftType << std::endl;
       break;
   }
 
   // not reachable
+  std::cout << "left node type = " << leftType << std::endl;
+  RuntimeExceptionUtil::throwUnknownNodeTypeException(leftType);
   return 0.0;
 }
 
 bool SBMLSystem::evaluateTriggerNode(const ASTNode *trigger, const state &x) {
   double left, right;
 
-  switch (trigger->getType()) {
+  ASTNodeType_t type = trigger->getType();
+  switch (type) {
     case AST_RELATIONAL_LT:
-      left = evaluateASTNode(trigger->getLeftChild(), UNDEFINED_REACTION_INDEX, x);
-      right = evaluateASTNode(trigger->getRightChild(), UNDEFINED_REACTION_INDEX, x);
+      left = evaluateASTNode(trigger->getLeftChild(), x);
+      right = evaluateASTNode(trigger->getRightChild(), x);
       return left < right;
     default:
-      std::cout << "trigger root node type = " << trigger->getType() << std::endl;
-      return false;
+      break;
   }
+
+  // not reachable
+  std::cout << "trigger root node type = " << type << std::endl;
+  RuntimeExceptionUtil::throwUnknownNodeTypeException(type);
+  return false;
 }
 
 void SBMLSystem::prepareInitialState() {
@@ -338,11 +331,7 @@ void SBMLSystem::prepareInitialState() {
   auto numSpecies = specieses.size();
 
   auto &parameters = this->model->getParameters();
-  auto numGlobalParameters = std::count_if(
-      parameters.begin(), parameters.end(),
-      [](ParameterWrapper *p) {
-        return p->isGlobalParameter();
-      });
+  auto numGlobalParameters = parameters.size();
 
   auto &compartments = this->model->getCompartments();
   auto numCompartments = compartments.size();
@@ -356,10 +345,8 @@ void SBMLSystem::prepareInitialState() {
     is[curIndex++] = specieses[i].getInitialAmountValue();
   }
   for (auto i = 0; i < parameters.size(); i++) {
-    if (parameters[i]->isGlobalParameter()) {
-      this->stateIndexMap[parameters[i]->getId()] = curIndex;
-      is[curIndex++] = parameters[i]->getValue();
-    }
+    this->stateIndexMap[parameters[i]->getId()] = curIndex;
+    is[curIndex++] = parameters[i]->getValue();
   }
   for (auto i = 0; i < numCompartments; i++) {
     this->stateIndexMap[compartments[i].getId()] = curIndex;
