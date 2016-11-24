@@ -374,4 +374,28 @@ namespace {
     EXPECT_EQ(s, "-1 * ((2 * x + 3) / ((x^2 + 3 * x + 4)^2 + 1))");
   }
 
+  TEST_F(MathUtilTest, differentiateTestArcsinh) {
+    ASTNode* ast = SBML_parseFormula("arcsinh(x^2+3*x+4)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "(2 * x + 3) / sqrt(1 + (x^2 + 3 * x + 4)^2)");
+  }
+
+  TEST_F(MathUtilTest, differentiateTestArccosh) {
+    ASTNode* ast = SBML_parseFormula("arccosh(x^2+3*x+4)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "(2 * x + 3) / sqrt((x^2 + 3 * x + 4)^2 - 1)");
+  }
+
+  TEST_F(MathUtilTest, differentiateTestArctanh) {
+    ASTNode* ast = SBML_parseFormula("arctanh(x^2+3*x+4)");
+    ast->reduceToBinary();
+    ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
+    std::string s = SBML_formulaToString(diff);
+    EXPECT_EQ(s, "(2 * x + 3) / (1 - (x^2 + 3 * x + 4)^2)");
+  }
+
 } // namespace

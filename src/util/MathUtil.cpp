@@ -450,6 +450,70 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       rtn->addChild(divide);
       break;
     }
+    case AST_FUNCTION_ARCSINH: {
+      /* d{arcsinh(u)}/dx = du/dx / sqrt(1 + u^2) */
+      rtn->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_FUNCTION_ROOT);
+      ASTNode *square = new ASTNode();
+      square->setValue(2);
+      ASTNode *plus = new ASTNode(AST_PLUS);
+      ASTNode *one = new ASTNode();
+      one->setValue(1);
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(two);
+      plus->addChild(one);
+      plus->addChild(power);
+      right->addChild(square);
+      right->addChild(plus);
+      rtn->addChild(left);
+      rtn->addChild(right);
+      break;
+    }
+    case AST_FUNCTION_ARCCOSH: {
+      /* d{arccosh(u)}/dx = du/dx / sqrt(u^2 - 1) */
+      rtn->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_FUNCTION_ROOT);
+      ASTNode *square = new ASTNode();
+      square->setValue(2);
+      ASTNode *minus = new ASTNode(AST_MINUS);
+      ASTNode *one = new ASTNode();
+      one->setValue(1);
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(two);
+      minus->addChild(power);
+      minus->addChild(one);
+      right->addChild(square);
+      right->addChild(minus);
+      rtn->addChild(left);
+      rtn->addChild(right);
+      break;
+    }
+    case AST_FUNCTION_ARCTANH: {
+      /* d{arctanh(u)}/dx = du/dx / (1 - u^2) */
+      rtn->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      ASTNode *right = new ASTNode(AST_MINUS);
+      ASTNode *one = new ASTNode();
+      one->setValue(1);
+      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *two = new ASTNode();
+      two->setValue(2);
+      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(two);
+      right->addChild(one);
+      right->addChild(power);
+      rtn->addChild(left);
+      rtn->addChild(right);
+      break;
+    }
     case AST_REAL:
     case AST_INTEGER:
     case AST_NAME_TIME:
