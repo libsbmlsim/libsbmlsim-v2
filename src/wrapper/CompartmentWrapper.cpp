@@ -22,10 +22,6 @@ const std::string &CompartmentWrapper::getId() const {
   return this->id;
 }
 
-void CompartmentWrapper::setValue(double value) {
-  this->value = value;
-}
-
 double CompartmentWrapper::getValue() const {
   return this->value;
 }

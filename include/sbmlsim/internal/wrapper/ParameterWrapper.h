@@ -14,7 +14,6 @@ class ParameterWrapper {
   ~ParameterWrapper();
   const std::string &getId() const;
   const std::string &getReactionId() const;
-  void setValue(double value);
   double getValue() const;
   bool isGlobalParameter() const;
   bool isLocalParameter() const;

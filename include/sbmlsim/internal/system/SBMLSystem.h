@@ -3,8 +3,11 @@
 
 #include <sbml/SBMLTypes.h>
 #include <string>
+#include <unordered_map>
 #include <boost/numeric/ublas/vector.hpp>
 #include "sbmlsim/internal/wrapper/ModelWrapper.h"
+#include "sbmlsim/config/OutputField.h"
+#include "sbmlsim/internal/observer/ObserveTarget.h"
 
 using namespace boost::numeric;
 
@@ -22,14 +25,19 @@ class SBMLSystem {
   void handleAlgebraicRule(state &x, double t);
   void handleAssignmentRule(state &x, double t);
   void handleRateRule(state &x, double t);
+  state getInitialState();
+  unsigned int getStateIndexForVariable(const std::string &variableId);
+  std::vector<ObserveTarget> createOutputTargetsFromOutputFields(const std::vector<OutputField> &outputFields);
  private:
   ModelWrapper *model;
+  state initialState;
+  std::unordered_map<std::string, unsigned int> stateIndexMap;
   double evaluateASTNode(const ASTNode *node, int reactionIndex, const state &x);
   double evaluateNameNode(const ASTNode *node, int reactionIndex, const state &x);
   double evaluateFunctionNode(const ASTNode *node, int reactionIndex, const state &x);
   double evaluateFactorialNode(const ASTNode *node, int reactionIndex, const state &x);
   bool evaluateTriggerNode(const ASTNode *trigger, const state &x);
-  int getIndexForSpecies(const std::string &speciesId);
+  void prepareInitialState();
 };
 
 #endif /* INCLUDE_SBMLSIM_INTERNAL_SYSTEM_SBMLSYSTEM_H_ */

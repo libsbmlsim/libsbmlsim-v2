@@ -12,7 +12,6 @@ class SpeciesWrapper {
   SpeciesWrapper(const SpeciesWrapper &species);
   ~SpeciesWrapper();
   const std::string &getId() const;
-  void setAmountValue(double amountValue);
   double getAmountValue() const;
   double getInitialAmountValue() const;
   const std::string &getCompartmentId() const;

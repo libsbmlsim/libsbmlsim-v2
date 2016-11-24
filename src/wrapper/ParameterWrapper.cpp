@@ -41,10 +41,6 @@ const std::string &ParameterWrapper::getReactionId() const {
   return this->reactionId;
 }
 
-void ParameterWrapper::setValue(double value) {
-  this->value = value;
-}
-
 double ParameterWrapper::getValue() const {
   return this->value;
 }

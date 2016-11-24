@@ -62,10 +62,6 @@ const std::string &SpeciesWrapper::getId() const {
   return this->id;
 }
 
-void SpeciesWrapper::setAmountValue(double amountValue) {
-  this->amountValue = amountValue;
-}
-
 double SpeciesWrapper::getAmountValue() const {
   return this->amountValue;
 }

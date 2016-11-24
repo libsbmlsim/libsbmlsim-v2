@@ -3,19 +3,20 @@
 #include <cmath>
 #include "sbmlsim/internal/util/MathUtil.h"
 
-#define UNDEFINED_SPECIES_INDEX -1
 #define UNDEFINED_REACTION_INDEX -1
 
 SBMLSystem::SBMLSystem(const ModelWrapper *model) : model(const_cast<ModelWrapper *>(model)) {
-  // nothing to do
+  prepareInitialState();
 }
 
-SBMLSystem::SBMLSystem(const SBMLSystem &system) :model(system.model) {
+SBMLSystem::SBMLSystem(const SBMLSystem &system)
+    : model(system.model), initialState(system.initialState), stateIndexMap(system.stateIndexMap) {
   // nothing to do
 }
 
 SBMLSystem::~SBMLSystem() {
-  // nothing to do
+  this->initialState.clear();
+  this->stateIndexMap.clear();
 }
 
 void SBMLSystem::operator()(const state &x, state &dxdt, double t) {
@@ -40,7 +41,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
 
     // reactants
     for (auto reactant : reaction.getReactants()) {
-      auto index = getIndexForSpecies(reactant.getSpeciesId());
+      auto index = getStateIndexForVariable(reactant.getSpeciesId());
       double stoichiometry;
       if (reactant.hasStoichiometryMath()) {
         stoichiometry = evaluateASTNode(reactant.getStoichiometryMath(), i, x);
@@ -52,7 +53,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
 
     // products
     for (auto product : reaction.getProducts()) {
-      auto index = getIndexForSpecies(product.getSpeciesId());
+      auto index = getStateIndexForVariable(product.getSpeciesId());
       double stoichiometry;
       if (product.hasStoichiometryMath()) {
         stoichiometry = evaluateASTNode(product.getStoichiometryMath(), i, x);
@@ -65,18 +66,17 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
 
   // rate rule
   for (auto rateRule : model->getRateRules()) {
-    auto index = getIndexForSpecies(rateRule->getVariable());
+    auto index = getStateIndexForVariable(rateRule->getVariable());
     auto value = evaluateASTNode(rateRule->getMath(), UNDEFINED_REACTION_INDEX, x);
     dxdt[index] = value;
-
-    // TODO support compartment and parameter
   }
 
   // boundaryCondition and constant
   auto &specieses = model->getSpecieses();
   for (auto i = 0; i < specieses.size(); i++) {
     if (specieses[i].hasBoundaryCondition() || specieses[i].isConstant()) {
-      dxdt[i] = 0.0;
+      auto index = getStateIndexForVariable(specieses[i].getId());
+      dxdt[index] = 0.0;
     }
   }
 }
@@ -87,12 +87,10 @@ void SBMLSystem::handleEvent(state &x, double t) {
     if (fire && event->getTriggerState() == false) {
       for (auto eventAssignment : event->getEventAssignments()) {
         auto variable = eventAssignment.getVariable();
-        auto speciesIndex = getIndexForSpecies(variable);
-        if (speciesIndex != UNDEFINED_SPECIES_INDEX) {
-          double value = evaluateASTNode(eventAssignment.getMath(), UNDEFINED_REACTION_INDEX, x);
-          x[speciesIndex] = value;
-          event->setTriggerState(true);
-        }
+        auto index = getStateIndexForVariable(variable);
+        double value = evaluateASTNode(eventAssignment.getMath(), UNDEFINED_REACTION_INDEX, x);
+        x[index] = value;
+        event->setTriggerState(true);
       }
     } else if (!fire) {
       event->setTriggerState(false);
@@ -113,7 +111,8 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
     auto specieses = model->getSpecieses();
     for (auto i = 0; i < specieses.size(); i++) {
       if (symbol == specieses[i].getId()) {
-        x[i] = value;
+        auto index = getStateIndexForVariable(specieses[i].getId());
+        x[index] = value;
       }
     }
 
@@ -121,7 +120,8 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
     auto compartments = model->getCompartments();
     for (auto i = 0; i < compartments.size(); i++) {
       if (symbol == compartments[i].getId()) {
-        compartments[i].setValue(value);
+        auto index = getStateIndexForVariable(compartments[i].getId());
+        x[index] = value;
       }
     }
 
@@ -129,7 +129,8 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
     auto parameters = model->getParameters();
     for (auto i = 0; i < parameters.size(); i++) {
       if (parameters[i]->isGlobalParameter() && symbol == parameters[i]->getId()) {
-        parameters[i]->setValue(value);
+        auto index = getStateIndexForVariable(parameters[i]->getId());
+        x[index] = value;
       }
     }
   }
@@ -149,7 +150,8 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
     auto specieses = model->getSpecieses();
     for (auto i = 0; i < specieses.size(); i++) {
       if (variable == specieses[i].getId()) {
-        x[i] = value;
+        auto index = getStateIndexForVariable(specieses[i].getId());
+        x[index] = value;
       }
     }
 
@@ -157,7 +159,8 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
     auto compartments = model->getCompartments();
     for (auto i = 0; i < compartments.size(); i++) {
       if (variable == compartments[i].getId()) {
-        compartments[i].setValue(value);
+        auto index = getStateIndexForVariable(compartments[i].getId());
+        x[index] = value;
       }
     }
 
@@ -165,7 +168,8 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
     auto parameters = model->getParameters();
     for (auto i = 0; i < parameters.size(); i++) {
       if (parameters[i]->isGlobalParameter() && variable == parameters[i]->getId()) {
-        parameters[i]->setValue(value);
+        auto index = getStateIndexForVariable(parameters[i]->getId());
+        x[index] = value;
       }
     }
   }
@@ -173,6 +177,27 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
 
 void SBMLSystem::handleRateRule(state &x, double t) {
   // TODO
+}
+
+SBMLSystem::state SBMLSystem::getInitialState() {
+  return this->initialState;
+}
+
+unsigned int SBMLSystem::getStateIndexForVariable(const std::string &variableId) {
+  return this->stateIndexMap[variableId];
+}
+
+std::vector<ObserveTarget> SBMLSystem::createOutputTargetsFromOutputFields(
+    const std::vector<OutputField> &outputFields) {
+  std::vector<ObserveTarget> ret;
+
+  for (auto outputField : outputFields) {
+    auto id = outputField.getId();
+    auto stateIndex = getStateIndexForVariable(id);
+    ret.push_back(ObserveTarget(id, stateIndex));
+  }
+
+  return ret;
 }
 
 double SBMLSystem::evaluateASTNode(const ASTNode *node, int reactionIndex, const state& x) {
@@ -244,11 +269,14 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
         auto compartments = model->getCompartments();
         for (auto j = 0; j < compartments.size(); j++) {
           if (specieses[i].getCompartmentId() == compartments[j].getId()) {
-            return x[i] / compartments[j].getValue();
+            auto speciesIndex = getStateIndexForVariable(specieses[i].getId());
+            auto compartmentIndex = getStateIndexForVariable(compartments[j].getId());
+            return x[speciesIndex] / x[compartmentIndex];
           }
         }
       } else {
-        return x[i];
+        auto speciesIndex = getStateIndexForVariable(specieses[i].getId());
+        return x[speciesIndex];
       }
     }
   }
@@ -257,7 +285,8 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
   auto compartments = model->getCompartments();
   for (auto i = 0; i < compartments.size(); i++) {
     if (name == compartments[i].getId()) {
-      return compartments[i].getValue();
+      auto index = getStateIndexForVariable(compartments[i].getId());
+      return x[index];
     }
   }
 
@@ -265,7 +294,8 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, int reactionIndex, cons
   auto parameters = model->getParameters();
   for (auto i = 0; i < parameters.size(); i++) {
     if (parameters[i]->isGlobalParameter() && name == parameters[i]->getId()) {
-      return parameters[i]->getValue();
+      auto index = getStateIndexForVariable(parameters[i]->getId());
+      return x[index];
     }
   }
 
@@ -303,12 +333,38 @@ bool SBMLSystem::evaluateTriggerNode(const ASTNode *trigger, const state &x) {
   }
 }
 
-int SBMLSystem::getIndexForSpecies(const std::string &speciesId) {
-  auto specieses = model->getSpecieses();
-  for (auto i = 0; i < specieses.size(); i++) {
-    if (speciesId == specieses[i].getId()) {
-      return i;
+void SBMLSystem::prepareInitialState() {
+  auto &specieses = this->model->getSpecieses();
+  auto numSpecies = specieses.size();
+
+  auto &parameters = this->model->getParameters();
+  auto numGlobalParameters = std::count_if(
+      parameters.begin(), parameters.end(),
+      [](ParameterWrapper *p) {
+        return p->isGlobalParameter();
+      });
+
+  auto &compartments = this->model->getCompartments();
+  auto numCompartments = compartments.size();
+
+  auto numVariables = numSpecies + numGlobalParameters + numCompartments;
+  state is(numVariables);
+
+  auto curIndex = 0;
+  for (auto i = 0; i < numSpecies; i++) {
+    this->stateIndexMap[specieses[i].getId()] = curIndex;
+    is[curIndex++] = specieses[i].getInitialAmountValue();
+  }
+  for (auto i = 0; i < parameters.size(); i++) {
+    if (parameters[i]->isGlobalParameter()) {
+      this->stateIndexMap[parameters[i]->getId()] = curIndex;
+      is[curIndex++] = parameters[i]->getValue();
     }
   }
-  return UNDEFINED_SPECIES_INDEX;
+  for (auto i = 0; i < numCompartments; i++) {
+    this->stateIndexMap[compartments[i].getId()] = curIndex;
+    is[curIndex++] = compartments[i].getValue();
+  }
+
+  this->initialState = is;
 }

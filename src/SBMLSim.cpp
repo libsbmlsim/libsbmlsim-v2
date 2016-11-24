@@ -41,34 +41,14 @@ void SBMLSim::simulate(const Model *model, unsigned int level, unsigned int vers
   delete dummyDocument;
 }
 
-state createInitialState(const ModelWrapper *model) {
-  const std::vector<SpeciesWrapper> &specieses = model->getSpecieses();
-
-  auto numSpecies = specieses.size();
-  state initialState(numSpecies);
-  for (auto i = 0; i < numSpecies; i++) {
-    auto species = specieses[i];
-    auto amountValue = species.getInitialAmountValue();
-    initialState[i] = amountValue;
-  }
-
-  return initialState;
-}
-
 void SBMLSim::simulateRungeKutta4(const ModelWrapper *model, const RunConfiguration &conf) {
   SBMLSystem system(model);
   odeint::runge_kutta4<state> stepper;
-  auto initialState = createInitialState(model);
-  StdoutCsvObserver observer;
+  auto initialState = system.getInitialState();
+  StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
 
   // print header
-  std::vector<SpeciesWrapper> specieses = model->getSpecieses();
-  std::cout << "time";
-  for (auto i = 0; i < specieses.size(); i++) {
-    auto species = specieses[i];
-    std::cout << "," << species.getId();
-  }
-  std::cout << std::endl;
+  observer.outputHeader();
 
   // integrate
   integrate_const(stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(),
@@ -79,17 +59,11 @@ void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfi
   SBMLSystem system(model);
   auto stepper = odeint::make_controlled<odeint::runge_kutta_dopri5<state> >(
       conf.getAbsoluteTolerance(), conf.getRelativeTolerance());
-  auto initialState = createInitialState(model);
-  StdoutCsvObserver observer;
+  auto initialState = system.getInitialState();
+  StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
 
   // print header
-  std::vector<SpeciesWrapper> specieses = model->getSpecieses();
-  std::cout << "time";
-  for (auto i = 0; i < specieses.size(); i++) {
-    auto species = specieses[i];
-    std::cout << "," << species.getId();
-  }
-  std::cout << std::endl;
+  observer.outputHeader();
 
   // integrate
   sbmlsim::integrate_const(
@@ -100,17 +74,11 @@ void SBMLSim::simulateRungeKuttaFehlberg78(const ModelWrapper *model, const RunC
   SBMLSystem system(model);
   auto stepper = odeint::make_controlled<odeint::runge_kutta_fehlberg78<state> >(
       conf.getAbsoluteTolerance(), conf.getRelativeTolerance());
-  auto initialState = createInitialState(model);
-  StdoutCsvObserver observer;
+  auto initialState = system.getInitialState();
+  StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
 
   // print header
-  std::vector<SpeciesWrapper> specieses = model->getSpecieses();
-  std::cout << "time";
-  for (auto i = 0; i < specieses.size(); i++) {
-    auto species = specieses[i];
-    std::cout << "," << species.getId();
-  }
-  std::cout << std::endl;
+  observer.outputHeader();
 
   // integrate
   sbmlsim::integrate_const(
@@ -120,20 +88,14 @@ void SBMLSim::simulateRungeKuttaFehlberg78(const ModelWrapper *model, const RunC
 void SBMLSim::simulateRosenbrock4(const ModelWrapper *model, const RunConfiguration &conf) {
   SBMLSystem system(model);
   SBMLSystemJacobi systemJacobi;
-  auto initialState = createInitialState(model);
+  auto initialState = system.getInitialState();
   auto stepper = odeint::make_dense_output(conf.getAbsoluteTolerance(), conf.getRelativeTolerance(),
                                            odeint::rosenbrock4<double>());
   auto implicitSystem = std::make_pair(system, systemJacobi);
-  StdoutCsvObserver observer;
+  StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
 
   // print header
-  std::vector<SpeciesWrapper> specieses = model->getSpecieses();
-  std::cout << "time";
-  for (auto i = 0; i < specieses.size(); i++) {
-    auto species = specieses[i];
-    std::cout << "," << species.getId();
-  }
-  std::cout << std::endl;
+  observer.outputHeader();
 
   // integrate
   integrate_const(stepper, implicitSystem, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(),
