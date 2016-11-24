@@ -30,44 +30,50 @@ long long MathUtil::ceil(double f) {
 }
 
 ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
-  ASTNode *tmp = new ASTNode();
+  ASTNode *rtn = new ASTNode();
   ASTNode *tmp2, *tmp3, *tmp4;
   ASTNode *left, *right;
   ASTNode *ll, *lr;
+  ASTNode *rl, *rr;
+  ASTNode *tmpl, *tmpr;
 
   if (containsTarget(ast, target) == 0) {
-    tmp->setType(AST_INTEGER);
-    tmp->setValue(0);
-    return tmp;
+    rtn->setType(AST_INTEGER);
+    rtn->setValue(0);
+    return rtn;
   }
 
   switch (ast->getType()) {
     case AST_PLUS:
-      tmp->setType(AST_PLUS);
-      tmp->addChild(differentiate(ast->getLeftChild(), target));
-      tmp->addChild(differentiate(ast->getRightChild(), target));
+      // d{u+v}/dx = du/dx + dv/dx
+      rtn->setType(AST_PLUS);
+      rtn->addChild(differentiate(ast->getLeftChild(), target));
+      rtn->addChild(differentiate(ast->getRightChild(), target));
       break;
     case AST_MINUS:
-      tmp->setType(AST_MINUS);
-      tmp->addChild(differentiate(ast->getLeftChild(), target));
-      tmp->addChild(differentiate(ast->getRightChild(), target));
+      // d{u-v}/dx = du/dx - dv/dx
+      rtn->setType(AST_MINUS);
+      rtn->addChild(differentiate(ast->getLeftChild(), target));
+      rtn->addChild(differentiate(ast->getRightChild(), target));
       break;
     case AST_TIMES:
-      tmp->setType(AST_PLUS);
+      // d{u*v}/dx = u * dv/dx + v * du/dx
+      rtn->setType(AST_PLUS);
       left = new ASTNode(AST_TIMES);
       left->addChild(differentiate(ast->getLeftChild(), target));
       left->addChild(ast->getRightChild()->deepCopy());
-      tmp->addChild(left);
+      rtn->addChild(left);
       right = new ASTNode(AST_TIMES);
       right->addChild(ast->getLeftChild()->deepCopy());
       right->addChild(differentiate(ast->getRightChild(), target));
-      tmp->addChild(right);
+      rtn->addChild(right);
       break;
     case AST_DIVIDE:
-      tmp->setType(AST_DIVIDE);
+      // d{u/v}/dx = (v * du/dx - u * dv/dx) / v^2
+      rtn->setType(AST_DIVIDE);
       if (containsTarget(ast->getRightChild(), target) == 0) {
-        tmp->addChild(differentiate(ast->getLeftChild(),target));
-        tmp->addChild(ast->getRightChild()->deepCopy());
+        rtn->addChild(differentiate(ast->getLeftChild(), target));
+        rtn->addChild(ast->getRightChild()->deepCopy());
         break;
       }
       left = new ASTNode(AST_MINUS);
@@ -79,34 +85,55 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       lr->addChild(differentiate(ast->getRightChild(), target));
       left->addChild(ll);
       left->addChild(lr);
-      tmp->addChild(left);
       right = new ASTNode(AST_FUNCTION_POWER);
       right->addChild(ast->getRightChild()->deepCopy());
-      tmp2 = new ASTNode(AST_INTEGER);
-      tmp2->setValue(2);
-      right->addChild(tmp2);
-      tmp->addChild(right);
+      rr = new ASTNode(AST_INTEGER);
+      rr->setValue(2);
+      right->addChild(rr);
+      rtn->addChild(left);
+      rtn->addChild(right);
       break;
     case AST_FUNCTION_POWER:
-    case AST_POWER:
-      tmp->setType(AST_TIMES);
+    case AST_POWER: {
+      // d{u^v}/dx = v * u^(v-1) * du/dx + u^v * ln(u) * dv/dx
+      rtn->setType(AST_PLUS);
+      // LHS
       left = new ASTNode(AST_TIMES);
-      left->addChild(ast->getRightChild()->deepCopy());
-      left->addChild(differentiate(ast->getLeftChild(), target));
-      tmp->addChild(left);
-      tmp3 = new ASTNode(AST_FUNCTION_POWER);
-      tmp3->addChild(ast->getLeftChild()->deepCopy());
-      right = new ASTNode(AST_MINUS);
-      right->addChild(ast->getRightChild()->deepCopy());
-      tmp2 = new ASTNode(AST_INTEGER);
-      tmp2->setValue(1);
-      right->addChild(tmp2);
-      tmp3->addChild(right);
-      tmp->addChild(tmp3);
+      ASTNode *minus = new ASTNode(AST_MINUS);
+      ASTNode *one = new ASTNode(AST_INTEGER);
+      one->setValue(1);
+      minus->addChild(ast->getRightChild()->deepCopy()); // add v
+      minus->addChild(one);
+      ASTNode *power = new ASTNode(AST_POWER);
+      power->addChild(ast->getLeftChild()->deepCopy()); // add u
+      power->addChild(minus);
+      ll = new ASTNode(AST_TIMES);
+      ll->addChild(ast->getRightChild()->deepCopy());  // add v
+      ll->addChild(power);
+      lr = differentiate(ast->getLeftChild(), target); // du/dx
+      left->addChild(ll);
+      left->addChild(lr);
+      // RHS
+      right = new ASTNode(AST_TIMES);
+      rl = new ASTNode(AST_POWER);
+      rl->addChild(ast->getLeftChild()->deepCopy());  // add u
+      rl->addChild(ast->getRightChild()->deepCopy()); // add v
+      rr = new ASTNode(AST_TIMES);
+      ASTNode *ln = new ASTNode(AST_FUNCTION_LN);
+      ln->addChild(ast->getLeftChild()->deepCopy());  // add u
+      rr->addChild(ln);
+      rr->addChild(differentiate(ast->getRightChild()->deepCopy(), target)); // add dv/dx
+      right->addChild(rl);
+      right->addChild(rr);
+      // add left and right
+      rtn->addChild(left);
+      rtn->addChild(right);
       break;
+    }
     case AST_FUNCTION_ROOT:
-      tmp->setType(AST_TIMES);
-      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      rtn->setType(AST_TIMES);
+      left = differentiate(ast->getLeftChild(), target);
+      rtn->addChild(left);
       right = new ASTNode(AST_TIMES);
       tmp2 = new ASTNode(AST_REAL);
       tmp2->setValue(0.5);
@@ -120,57 +147,59 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       break;
     case AST_FUNCTION_SIN:
       // d{sin(u)}/dx = du/dx * cos(u)
-      tmp->setType(AST_TIMES);
-      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      rtn->setType(AST_TIMES);
+      left = differentiate(ast->getLeftChild(), target);
       right = new ASTNode(AST_FUNCTION_COS);
       right->addChild(ast->getLeftChild()->deepCopy());
-      tmp->addChild(right);
+      rtn->addChild(left);
+      rtn->addChild(right);
       break;
     case AST_FUNCTION_COS:
       // d{cos(u)}/dx = -1 * du/dx * sin(u)
-      tmp->setType(AST_TIMES);
+      rtn->setType(AST_TIMES);
       left = new ASTNode(AST_TIMES);
-      tmp2 = new ASTNode(AST_INTEGER);
-      tmp2->setValue(-1);
-      left->addChild(tmp2);
+      ll = new ASTNode(AST_INTEGER);
+      ll->setValue(-1);
+      left->addChild(ll);
       left->addChild(differentiate(ast->getLeftChild(), target));
-      tmp->addChild(left);
       right = new ASTNode(AST_FUNCTION_SIN);
       right->addChild(ast->getLeftChild()->deepCopy());
-      tmp->addChild(right);
+      rtn->addChild(left);
+      rtn->addChild(right);
       break;
     case AST_FUNCTION_TAN:
       // d{tan(u)}/dx = du/dx * sec(u)^2
-      tmp->setType(AST_TIMES);
+      rtn->setType(AST_TIMES);
       left = differentiate(ast->getLeftChild(), target);
       right = new ASTNode(AST_POWER);
-      tmp2 = new ASTNode(AST_FUNCTION_SEC);
-      tmp3 = ast->getLeftChild()->deepCopy();
-      tmp2->addChild(tmp3);
-      tmp4 = new ASTNode();
-      tmp4->setValue(2);
-      right->addChild(tmp2);
-      right->addChild(tmp4);
-      tmp->addChild(left);
-      tmp->addChild(right);
+      rl = new ASTNode(AST_FUNCTION_SEC);
+      tmpl = ast->getLeftChild()->deepCopy();
+      rl->addChild(tmpl);
+      rr = new ASTNode();
+      rr->setValue(2);
+      right->addChild(rl);
+      right->addChild(rr);
+      rtn->addChild(left);
+      rtn->addChild(right);
       break;
     case AST_FUNCTION_SINH:
-      tmp->setType(AST_TIMES);
-      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      rtn->setType(AST_TIMES);
+      left = differentiate(ast->getLeftChild(), target);
       right = new ASTNode(AST_FUNCTION_COSH);
       right->addChild(ast->getLeftChild()->deepCopy());
-      tmp->addChild(right);
+      rtn->addChild(left);
+      rtn->addChild(right);
       break;
     case AST_FUNCTION_COSH:
-      tmp->setType(AST_TIMES);
-      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      rtn->setType(AST_TIMES);
+      rtn->addChild(differentiate(ast->getLeftChild(), target));
       right = new ASTNode(AST_FUNCTION_SINH);
       right->addChild(ast->getLeftChild()->deepCopy());
-      tmp->addChild(right);
+      rtn->addChild(right);
       break;
     case AST_FUNCTION_TANH:
-      tmp->setType(AST_TIMES);
-      tmp->addChild(differentiate(ast->getLeftChild(), target));
+      rtn->setType(AST_TIMES);
+      rtn->addChild(differentiate(ast->getLeftChild(), target));
       right = new ASTNode(AST_DIVIDE);
       tmp2 = new ASTNode(AST_INTEGER);
       tmp2->setValue(1);
@@ -187,23 +216,23 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
     case AST_REAL:
     case AST_INTEGER:
     case AST_NAME_TIME:
-      tmp->setType(AST_INTEGER);
-      tmp->setValue(0);
+      rtn->setType(AST_INTEGER);
+      rtn->setValue(0);
       break;
     case AST_NAME:
-      tmp->setType(AST_INTEGER);
+      rtn->setType(AST_INTEGER);
       if (ast->getName() == target) {
-        tmp->setValue(1);
+        rtn->setValue(1);
       } else {
-        tmp->setValue(0);
+        rtn->setValue(0);
       }
       break;
     default:
       std::cout << "unknown" << std::endl;
       exit(1);
   }
-  tmp->reduceToBinary();
-  return tmp;
+  rtn->reduceToBinary();
+  return rtn;
 }
 
 bool MathUtil::containsTarget(const ASTNode *ast, std::string target)
