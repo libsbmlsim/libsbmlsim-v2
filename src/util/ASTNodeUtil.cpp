@@ -96,9 +96,10 @@ ASTNode *ASTNodeUtil::reduceToBinary(const ASTNode *node) {
   delete rightOfLeftNode;
 
   auto *ret = node->deepCopy();
-  for (auto i = ret->getNumChildren() - 1; i >= 0; i--) {
-    auto child = ret->getChild(i);
-    ret->removeChild(i);
+  while (ret->getNumChildren() > 0) {
+    auto index = ret->getNumChildren() - 1;
+    auto child = ret->getChild(index);
+    ret->removeChild(index);
     delete child;
   }
   ret->addChild(leftNode);
