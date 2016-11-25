@@ -62,13 +62,21 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
     }
   }
 
+  // boundaryCondition
+  auto &specieses = model->getSpecieses();
+  for (auto i = 0; i < specieses.size(); i++) {
+    if (specieses[i].hasBoundaryCondition()) {
+      auto index = getStateIndexForVariable(specieses[i].getId());
+      dxdt[index] = 0.0;
+    }
+  }
+
   // rate rule
   handleRateRule(x, dxdt, t);
 
-  // boundaryCondition and constant
-  auto &specieses = model->getSpecieses();
+  // constant
   for (auto i = 0; i < specieses.size(); i++) {
-    if (specieses[i].hasBoundaryCondition() || specieses[i].isConstant()) {
+    if (specieses[i].isConstant()) {
       auto index = getStateIndexForVariable(specieses[i].getId());
       dxdt[index] = 0.0;
     }
