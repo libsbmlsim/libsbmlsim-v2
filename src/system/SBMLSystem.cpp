@@ -361,6 +361,7 @@ double SBMLSystem::evaluatePiecewiseNode(const ASTNode *node, const state &x) {
 
 bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x) {
   double left, right;
+  bool leftCondition, rightCondition;
 
   auto type = node->getType();
   switch (type) {
@@ -384,6 +385,10 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x) {
       left = evaluateASTNode(node->getLeftChild(), x);
       right = evaluateASTNode(node->getRightChild(), x);
       return left >= right;
+    case AST_LOGICAL_AND:
+      leftCondition = evaluateConditionalNode(node->getLeftChild(), x);
+      rightCondition = evaluateConditionalNode(node->getRightChild(), x);
+      return leftCondition && rightCondition;
     default:
       break;
   }
