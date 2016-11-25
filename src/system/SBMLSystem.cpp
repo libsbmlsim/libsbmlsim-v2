@@ -389,6 +389,13 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x) {
       leftCondition = evaluateConditionalNode(node->getLeftChild(), x);
       rightCondition = evaluateConditionalNode(node->getRightChild(), x);
       return leftCondition && rightCondition;
+    case AST_LOGICAL_OR:
+      leftCondition = evaluateConditionalNode(node->getLeftChild(), x);
+      if (leftCondition) {
+        return true;
+      }
+      rightCondition = evaluateConditionalNode(node->getRightChild(), x);
+      return rightCondition;
     default:
       break;
   }
