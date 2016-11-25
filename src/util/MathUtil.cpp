@@ -29,6 +29,10 @@ long long MathUtil::ceil(double f) {
   return ::ceil(f);
 }
 
+long long MathUtil::floor(double f) {
+  return ::floor(f);
+}
+
 double MathUtil::pow(double x, double y) {
   return ::pow(x, y);
 }

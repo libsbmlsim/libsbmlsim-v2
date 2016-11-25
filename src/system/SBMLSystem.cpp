@@ -270,6 +270,8 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x) {
       return evaluateFactorialNode(node, x);
     case AST_FUNCTION_CEILING:
       return MathUtil::ceil(evaluateASTNode(node->getLeftChild(), x));
+    case AST_FUNCTION_FLOOR:
+      return MathUtil::floor(evaluateASTNode(node->getLeftChild(), x));
     case AST_FUNCTION_PIECEWISE:
       return evaluatePiecewiseNode(node, x);
     default:

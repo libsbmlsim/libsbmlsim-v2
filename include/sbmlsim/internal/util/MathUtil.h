@@ -8,6 +8,7 @@ class MathUtil {
  public:
   static double factorial(unsigned long long n);
   static long long ceil(double f);
+  static long long floor(double f);
   static double pow(double x, double y);
   static bool containsTarget(const ASTNode *ast, std::string target);
   static ASTNode* simplify(const ASTNode *ast);
