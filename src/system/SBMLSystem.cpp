@@ -63,11 +63,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
   }
 
   // rate rule
-  for (auto rateRule : model->getRateRules()) {
-    auto index = getStateIndexForVariable(rateRule->getVariable());
-    auto value = evaluateASTNode(rateRule->getMath(), x);
-    dxdt[index] = value;
-  }
+  handleRateRule(x, dxdt, t);
 
   // boundaryCondition and constant
   auto &specieses = model->getSpecieses();
@@ -206,8 +202,40 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
   }
 }
 
-void SBMLSystem::handleRateRule(state &x, double t) {
-  // TODO
+void SBMLSystem::handleRateRule(const state &x, state &dxdt, double t) {
+  for (auto rateRule : model->getRateRules()) {
+    auto &variableName = rateRule->getVariable();
+    auto value = evaluateASTNode(rateRule->getMath(), x);
+    auto index = getStateIndexForVariable(variableName);
+
+    // species
+    bool continueImmediately = false;
+    auto &specieses = model->getSpecieses();
+    for (auto i = 0; i < specieses.size(); i++) {
+      if (variableName == specieses[i].getId()) {
+        if (specieses[i].shouldMultiplyByCompartmentSizeOnAssignment()) {
+          auto compartments = model->getCompartments();
+          for (auto j = 0; j < compartments.size(); j++) {
+            if (specieses[i].getCompartmentId() == compartments[j].getId()) {
+              auto compartmentIndex = getStateIndexForVariable(compartments[j].getId());
+              dxdt[index] = value * x[compartmentIndex];
+            }
+          }
+        } else {
+          dxdt[index] = value;
+        }
+        continueImmediately = true;
+        break;
+      }
+    }
+
+    if (continueImmediately) {
+      continue;
+    }
+
+    // compartment or global parameter
+    dxdt[index] = value;
+  }
 }
 
 SBMLSystem::state SBMLSystem::getInitialState() {

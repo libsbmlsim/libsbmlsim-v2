@@ -24,7 +24,6 @@ class SBMLSystem {
   void handleInitialAssignment(state &x, double t);
   void handleAlgebraicRule(state &x, double t);
   void handleAssignmentRule(state &x, double t);
-  void handleRateRule(state &x, double t);
   state getInitialState();
   unsigned int getStateIndexForVariable(const std::string &variableId);
   std::vector<ObserveTarget> createOutputTargetsFromOutputFields(const std::vector<OutputField> &outputFields);
@@ -32,6 +31,7 @@ class SBMLSystem {
   ModelWrapper *model;
   state initialState;
   std::unordered_map<std::string, unsigned int> stateIndexMap;
+  void handleRateRule(const state &x, state &dxdt, double t);
   double evaluateASTNode(const ASTNode *node, const state &x);
   double evaluateNameNode(const ASTNode *node, const state &x);
   double evaluateFunctionNode(const ASTNode *node, const state &x);
