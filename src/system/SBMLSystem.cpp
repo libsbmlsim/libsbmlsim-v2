@@ -368,6 +368,10 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x) {
       left = evaluateASTNode(node->getLeftChild(), x);
       right = evaluateASTNode(node->getRightChild(), x);
       return left < right;
+    case AST_RELATIONAL_LEQ:
+      left = evaluateASTNode(node->getLeftChild(), x);
+      right = evaluateASTNode(node->getRightChild(), x);
+      return left <= right;
     case AST_RELATIONAL_GT:
       left = evaluateASTNode(node->getLeftChild(), x);
       right = evaluateASTNode(node->getRightChild(), x);
