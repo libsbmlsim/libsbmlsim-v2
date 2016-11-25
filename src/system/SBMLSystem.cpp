@@ -362,6 +362,8 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x) {
 
   auto type = node->getType();
   switch (type) {
+    case AST_CONSTANT_TRUE:
+      return true;
     case AST_CONSTANT_FALSE:
       return false;
     case AST_RELATIONAL_LT:
