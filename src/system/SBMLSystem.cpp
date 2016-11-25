@@ -396,6 +396,10 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x) {
       }
       rightCondition = evaluateConditionalNode(node->getRightChild(), x);
       return rightCondition;
+    case AST_LOGICAL_XOR:
+      leftCondition = evaluateConditionalNode(node->getLeftChild(), x);
+      rightCondition = evaluateConditionalNode(node->getRightChild(), x);
+      return leftCondition ^ rightCondition;
     default:
       break;
   }
