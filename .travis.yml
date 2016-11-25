@@ -10,6 +10,7 @@ compiler:
 before_install:
   - wget http://downloads.sourceforge.net/project/sbml/libsbml/5.13.0/stable/Linux/64-bit/libSBML-5.13.0-Linux-x64.deb
   - sudo dpkg -i libSBML-5.13.0-Linux-x64.deb
+  - sh travis.testsuite.xml.sh > $HOME/.testsuite.xml
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
@@ -28,6 +29,7 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
       - llvm-toolchain-precise-3.8
+      - boost-latest
     packages:
       - cmake
       - clang-3.8
@@ -35,7 +37,7 @@ addons:
       - gcc-5
       - libxml2-dev
       - libbz2-dev
-      - libboost-all-dev
+      - libboost1.55-all-dev
       - oracle-java8-installer
       - ant
 

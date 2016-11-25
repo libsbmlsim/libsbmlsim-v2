@@ -7,12 +7,15 @@ include_directories(${LIBSBML_INCLUDE_DIR})
 add_executable(sbmlsim-example example.cpp)
 target_link_libraries(sbmlsim-example sbmlsim)
 
+add_executable(sbmlsim-testsuite-runner testsuite-runner.cpp)
+target_link_libraries(sbmlsim-testsuite-runner sbmlsim)
+
 # installation: example
 install(TARGETS sbmlsim-example
   RUNTIME DESTINATION bin
   )
 
-# installation: example models
-file(GLOB_RECURSE example_models "${LIBSBMLSIM_EXAMPLE_DIR}/*")
-install(FILES ${example_models} DESTINATION share/sbmlsim/example/models)
-
+# installation: testsuite-runner
+install(TARGETS sbmlsim-testsuite-runner
+  RUNTIME DESTINATION bin
+  )

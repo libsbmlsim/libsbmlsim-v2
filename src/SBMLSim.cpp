@@ -1,16 +1,16 @@
-#include <memory>
-#include <vector>
-#include <map>
-#include <stack>
-#include <cassert>
-
 #include "sbmlsim/SBMLSim.h"
-#include "sbmlsim/RunConfiguration.h"
-#include "sbmlsim/internal/DevUtil.h"
 
-using namespace std;
+#include <iostream>
+#include <boost/numeric/odeint.hpp>
+#include "sbmlsim/internal/system/SBMLSystem.h"
+#include "sbmlsim/internal/system/SBMLSystemJacobi.h"
+#include "sbmlsim/internal/integrate/IntegrateConst.h"
+#include "sbmlsim/internal/observer/StdoutCsvObserver.h"
 
-void SBMLSim::simulate(const string &filepath, const RunConfiguration &conf) {
+using namespace boost::numeric;
+using state = SBMLSystem::state;
+
+void SBMLSim::simulate(const std::string &filepath, const RunConfiguration &conf) {
   SBMLReader reader;
   SBMLDocument *document = reader.readSBMLFromFile(filepath);
   simulate(document, conf);
@@ -19,135 +19,85 @@ void SBMLSim::simulate(const string &filepath, const RunConfiguration &conf) {
 
 void SBMLSim::simulate(const SBMLDocument *document, const RunConfiguration &conf) {
   const Model *model = document->getModel();
-  const Model *clonedModel = model->clone();
-  simulate(clonedModel, conf);
-  delete clonedModel;
+  unsigned int level = document->getLevel();
+  unsigned int version = document->getVersion();
+  simulate(model, level, version, conf);
 }
 
-double evaluateASTNode(const ASTNode *node,
-    const map<string, double> &speciesValues,
-    const map<string, double> &parameterValues) {
-  double left, right;
-  if (node->getLeftChild() != NULL) {
-    left = evaluateASTNode(node->getLeftChild(), speciesValues, parameterValues);
-  }
-  if (node->getRightChild() != NULL) {
-    right = evaluateASTNode(node->getRightChild(), speciesValues, parameterValues);
-  }
+void SBMLSim::simulate(const Model *model, unsigned int level, unsigned int version, const RunConfiguration &conf) {
+  Model *clonedModel = model->clone();
+  SBMLDocument *dummyDocument = new SBMLDocument(level, version);
+  clonedModel->setSBMLDocument(dummyDocument);
+  dummyDocument->setModel(clonedModel);
 
-  switch (node->getType()) {
-    case AST_NAME:
-      if (speciesValues.find(string(node->getName())) != speciesValues.end()) {
-        return speciesValues.at(node->getName());
-      }
-      if (parameterValues.find(string(node->getName())) != parameterValues.end()) {
-        return parameterValues.at(node->getName());
-      }
-    case AST_PLUS:
-      return left + right;
-    case AST_MINUS:
-      return left - right;
-    case AST_TIMES:
-      return left * right;
-    case AST_DIVIDE:
-      return left / right;
-    case AST_REAL:
-      return node->getReal();
-    default:
-      assert(false);
-      return 0;
-  }
+  ModelWrapper *modelWrapper = new ModelWrapper(clonedModel);
+
+  // simulateRungeKutta4(modelWrapper, conf);
+  simulateRungeKuttaDopri5(modelWrapper, conf);
+  // simulateRungeKuttaFehlberg78(modelWrapper, conf);
+  // simulateRosenbrock4(modelWrapper, conf);
+
+  delete modelWrapper;
+  delete dummyDocument;
 }
 
-void SBMLSim::simulate(const Model *model, const RunConfiguration &conf) {
-  DevUtil::dumpSBMLDocument(model->getSBMLDocument());
-
-  unsigned int numSpecies = model->getNumSpecies();
-  unsigned int numReactions = model->getNumReactions();
-  unsigned int numGlobalParameters = model->getNumParameters();
-
-  // initialize species value and index
-  map<string, double> speciesValues;
-  for (unsigned int i = 0; i < numSpecies; i++) {
-    const Species *species = model->getSpecies(i);
-    const string speciesId = species->getId();
-    double initialAmount = species->getInitialAmount();
-    speciesValues[speciesId] = initialAmount;
-  }
-
-  // initialize parameter value (global)
-  map<string, double> parameterValues;
-  for (unsigned int i = 0; i < numGlobalParameters; i++) {
-    const Parameter *parameter = model->getParameter(i);
-    const string parameterId = parameter->getId();
-    double parameterValue = parameter->getValue();
-    parameterValues[parameterId] = parameterValue;
-  }
-
-  // print reactions
-  for (unsigned int i = 0; i < numReactions; i++) {
-    const Reaction *reaction = model->getReaction(i);
-    const KineticLaw *kineticLaw = reaction->getKineticLaw();
-    const ASTNode *node = kineticLaw->getMath();
-    DevUtil::dumpASTNode(node);
-  }
+void SBMLSim::simulateRungeKutta4(const ModelWrapper *model, const RunConfiguration &conf) {
+  SBMLSystem system(model);
+  odeint::runge_kutta4<state> stepper;
+  auto initialState = system.getInitialState();
+  StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
 
   // print header
-  cout << "t";
-  for (unsigned int i = 0; i < numSpecies; i++) {
-    const Species *species = model->getSpecies(i);
-    const string speciesId = species->getId();
-    cout << " " << speciesId;
-  }
-  cout << endl;
+  observer.outputHeader();
 
-  // simulate (euler)
-  double maxt = conf.getDuration();
-  double dt = conf.getDt();
-  for (double t = 0; t <= maxt; t += dt) {
-    // print current
-    cout << t;
-    for (unsigned int i = 0; i < numSpecies; i++) {
-      const Species *species = model->getSpecies(i);
-      const string speciesId = species->getId();
-      cout << " " << speciesValues[speciesId];
-    }
-    cout << endl;
+  // integrate
+  sbmlsim::integrate_const(
+      stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), std::ref(observer));
+}
 
-    // initialize species diffs
-    map<string, double> speciesDiffs;
-    for (unsigned int i = 0; i < numSpecies; i++) {
-      const Species *species = model->getSpecies(i);
-      const string speciesId = species->getId();
-      speciesDiffs[speciesId] = 0.0;
-    }
+void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfiguration &conf) {
+  SBMLSystem system(model);
+  auto stepper = odeint::make_controlled<odeint::runge_kutta_dopri5<state> >(
+      conf.getAbsoluteTolerance(), conf.getRelativeTolerance());
+  auto initialState = system.getInitialState();
+  StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
 
-    for (unsigned int i = 0; i < numReactions; i++) {
-      const Reaction *reaction = model->getReaction(i);
-      const KineticLaw *kineticLaw = reaction->getKineticLaw();
-      const ASTNode *math = kineticLaw->getMath();
+  // print header
+  observer.outputHeader();
 
-      double val = evaluateASTNode(math, speciesValues, parameterValues);
+  // integrate
+  sbmlsim::integrate_const(
+      stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), std::ref(observer));
+}
 
-      unsigned int numReactants = reaction->getNumReactants();
-      for (unsigned int i = 0; i < numReactants; i++) {
-        const SpeciesReference *reactant = reaction->getReactant(i);
-        const string reactantId = reactant->getSpecies();
-        speciesDiffs[reactantId] -= val * dt;
-      }
-      unsigned int numProducts = reaction->getNumProducts();
-      for (unsigned int i = 0; i < numProducts; i++) {
-        const SpeciesReference *product = reaction->getProduct(i);
-        const string productId = product->getSpecies();
-        speciesDiffs[productId] += val * dt;
-      }
-    }
+void SBMLSim::simulateRungeKuttaFehlberg78(const ModelWrapper *model, const RunConfiguration &conf) {
+  SBMLSystem system(model);
+  auto stepper = odeint::make_controlled<odeint::runge_kutta_fehlberg78<state> >(
+      conf.getAbsoluteTolerance(), conf.getRelativeTolerance());
+  auto initialState = system.getInitialState();
+  StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
 
-    // update species value
-    for (unsigned int i = 0; i < numSpecies; i++) {
-      const Species *species = model->getSpecies(i);
-      const string speciesId = species->getId();
-      speciesValues[speciesId] += speciesDiffs[speciesId];
-    }
-  }
+  // print header
+  observer.outputHeader();
+
+  // integrate
+  sbmlsim::integrate_const(
+      stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), std::ref(observer));
+}
+
+void SBMLSim::simulateRosenbrock4(const ModelWrapper *model, const RunConfiguration &conf) {
+  SBMLSystem system(model);
+  SBMLSystemJacobi systemJacobi;
+  auto initialState = system.getInitialState();
+  auto stepper = odeint::make_dense_output(conf.getAbsoluteTolerance(), conf.getRelativeTolerance(),
+                                           odeint::rosenbrock4<double>());
+  auto implicitSystem = std::make_pair(system, systemJacobi);
+  StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
+
+  // print header
+  observer.outputHeader();
+
+  // integrate
+  integrate_const(stepper, implicitSystem, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(),
+                  std::ref(observer));
 }
