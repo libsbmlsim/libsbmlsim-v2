@@ -81,7 +81,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
 
 void SBMLSystem::handleEvent(state &x, double t) {
   for (auto event : model->getEvents()) {
-    bool fire = evaluateTriggerNode(event->getTrigger(), x);
+    bool fire = evaluateConditionalNode(event->getTrigger(), x);
     if (fire && event->getTriggerState() == false) {
       for (auto eventAssignment : event->getEventAssignments()) {
         auto variable = eventAssignment.getVariable();
@@ -347,7 +347,7 @@ double SBMLSystem::evaluatePiecewiseNode(const ASTNode *node, const state &x) {
   // piece nodes
   for (auto i = 0; i < node->getNumChildren() - 1; i += 2) {
     auto conditionalNode = node->getChild(i + 1);
-    if (evaluatePiecewiseConditionalNode(conditionalNode, x)) {
+    if (evaluateConditionalNode(conditionalNode, x)) {
       return evaluateASTNode(node->getChild(i), x);
     }
   }
@@ -357,36 +357,27 @@ double SBMLSystem::evaluatePiecewiseNode(const ASTNode *node, const state &x) {
   return evaluateASTNode(otherwiseNode, x);
 }
 
-bool SBMLSystem::evaluatePiecewiseConditionalNode(const ASTNode *node, const state &x) {
+bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x) {
+  double left, right;
+
   auto type = node->getType();
   switch (type) {
     case AST_CONSTANT_FALSE:
       return false;
+    case AST_RELATIONAL_LT:
+      left = evaluateASTNode(node->getLeftChild(), x);
+      right = evaluateASTNode(node->getRightChild(), x);
+      return left < right;
+    case AST_RELATIONAL_GEQ:
+      left = evaluateASTNode(node->getLeftChild(), x);
+      right = evaluateASTNode(node->getRightChild(), x);
+      return left >= right;
     default:
       break;
   }
 
   // not reachable
   std::cout << "conditional node type = " << type << std::endl;
-  RuntimeExceptionUtil::throwUnknownNodeTypeException(type);
-  return false;
-}
-
-bool SBMLSystem::evaluateTriggerNode(const ASTNode *trigger, const state &x) {
-  double left, right;
-
-  auto type = trigger->getType();
-  switch (type) {
-    case AST_RELATIONAL_LT:
-      left = evaluateASTNode(trigger->getLeftChild(), x);
-      right = evaluateASTNode(trigger->getRightChild(), x);
-      return left < right;
-    default:
-      break;
-  }
-
-  // not reachable
-  std::cout << "trigger root node type = " << type << std::endl;
   RuntimeExceptionUtil::throwUnknownNodeTypeException(type);
   return false;
 }
