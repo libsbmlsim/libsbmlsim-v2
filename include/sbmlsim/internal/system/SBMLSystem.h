@@ -36,6 +36,8 @@ class SBMLSystem {
   double evaluateNameNode(const ASTNode *node, const state &x);
   double evaluateFunctionNode(const ASTNode *node, const state &x);
   double evaluateFactorialNode(const ASTNode *node, const state &x);
+  double evaluatePiecewiseNode(const ASTNode *node, const state &x);
+  bool evaluatePiecewiseConditionalNode(const ASTNode *node, const state &x);
   bool evaluateTriggerNode(const ASTNode *trigger, const state &x);
   void prepareInitialState();
 };

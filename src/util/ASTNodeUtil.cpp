@@ -1,5 +1,7 @@
 #include "sbmlsim/internal/util/ASTNodeUtil.h"
 
+#define DELETE_REPLACED_NODE true
+
 ASTNode *ASTNodeUtil::rewriteFunctionDefinition(const ASTNode *node,
                                                 const ListOfFunctionDefinitions *functionDefinitions) {
   ASTNode *ret;
@@ -25,7 +27,7 @@ ASTNode *ASTNodeUtil::rewriteFunctionDefinition(const ASTNode *node,
   // rewrite children's function node recursively
   for (auto i = 0; i < ret->getNumChildren(); i++) {
     auto newChild = rewriteFunctionDefinition(ret->getChild(i), functionDefinitions);
-    ret->replaceChild(i, newChild, true);
+    ret->replaceChild(i, newChild, DELETE_REPLACED_NODE);
   }
 
   return ret;
@@ -53,8 +55,54 @@ ASTNode *ASTNodeUtil::rewriteLocalParameters(const ASTNode *node, const ListOfPa
   // replace children's local parameter node recursively
   for (auto i = 0; i < ret->getNumChildren(); i++) {
     auto newChild = rewriteLocalParameters(ret->getChild(i), localParameters);
-    ret->replaceChild(i, newChild, true);
+    ret->replaceChild(i, newChild, DELETE_REPLACED_NODE);
   }
+
+  return ret;
+}
+
+ASTNode *ASTNodeUtil::reduceToBinary(const ASTNode *node) {
+  auto type = node->getType();
+  auto numChildren = node->getNumChildren();
+
+  // keep piecewise node
+  if (type == AST_FUNCTION_PIECEWISE) {
+    ASTNode *ret = node->deepCopy();
+    for (auto i = 0; i < numChildren; i++) {
+      auto newChild = reduceToBinary(ret->getChild(i));
+      ret->replaceChild(i, newChild, DELETE_REPLACED_NODE);
+    }
+    return ret;
+  }
+
+  // binary, unary, variable or constant
+  if (numChildren <= 2) {
+    return node->deepCopy();
+  }
+
+  //
+  //    F             F
+  //  / | \          / \
+  // x  y  z  ==>   F   z
+  //               / \
+  //              x   y
+  //
+
+  auto rightNode = reduceToBinary(node->getRightChild());
+
+  auto leftNode = node->deepCopy();
+  auto rightOfLeftNode = leftNode->getRightChild();
+  leftNode->removeChild(leftNode->getNumChildren() - 1);
+  delete rightOfLeftNode;
+
+  auto *ret = node->deepCopy();
+  for (auto i = ret->getNumChildren() - 1; i >= 0; i--) {
+    auto child = ret->getChild(i);
+    ret->removeChild(i);
+    delete child;
+  }
+  ret->addChild(leftNode);
+  ret->addChild(rightNode);
 
   return ret;
 }

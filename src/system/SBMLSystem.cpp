@@ -1,6 +1,7 @@
 #include "sbmlsim/internal/system/SBMLSystem.h"
 #include <algorithm>
 #include "sbmlsim/internal/util/MathUtil.h"
+#include "sbmlsim/internal/util/ASTNodeUtil.h"
 #include "sbmlsim/internal/util/RuntimeExceptionUtil.h"
 
 SBMLSystem::SBMLSystem(const ModelWrapper *model) : model(const_cast<ModelWrapper *>(model)) {
@@ -32,8 +33,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
     auto reaction = reactions[i];
     auto node = reaction.getMath();
 
-    auto clonedNode = node->deepCopy();
-    clonedNode->reduceToBinary();
+    auto clonedNode = ASTNodeUtil::reduceToBinary(node);
     auto value = evaluateASTNode(clonedNode, x);
     delete clonedNode;
 
@@ -270,6 +270,8 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x) {
       return evaluateFactorialNode(node, x);
     case AST_FUNCTION_CEILING:
       return MathUtil::ceil(evaluateASTNode(node->getLeftChild(), x));
+    case AST_FUNCTION_PIECEWISE:
+      return evaluatePiecewiseNode(node, x);
     default:
       std::cout << "type = " << type << std::endl;
       break;
@@ -341,10 +343,39 @@ double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x) {
   return 0.0;
 }
 
+double SBMLSystem::evaluatePiecewiseNode(const ASTNode *node, const state &x) {
+  // piece nodes
+  for (auto i = 0; i < node->getNumChildren() - 1; i += 2) {
+    auto conditionalNode = node->getChild(i + 1);
+    if (evaluatePiecewiseConditionalNode(conditionalNode, x)) {
+      return evaluateASTNode(node->getChild(i), x);
+    }
+  }
+
+  // otherwise node
+  auto otherwiseNode = node->getRightChild();
+  return evaluateASTNode(otherwiseNode, x);
+}
+
+bool SBMLSystem::evaluatePiecewiseConditionalNode(const ASTNode *node, const state &x) {
+  auto type = node->getType();
+  switch (type) {
+    case AST_CONSTANT_FALSE:
+      return false;
+    default:
+      break;
+  }
+
+  // not reachable
+  std::cout << "conditional node type = " << type << std::endl;
+  RuntimeExceptionUtil::throwUnknownNodeTypeException(type);
+  return false;
+}
+
 bool SBMLSystem::evaluateTriggerNode(const ASTNode *trigger, const state &x) {
   double left, right;
 
-  ASTNodeType_t type = trigger->getType();
+  auto type = trigger->getType();
   switch (type) {
     case AST_RELATIONAL_LT:
       left = evaluateASTNode(trigger->getLeftChild(), x);
