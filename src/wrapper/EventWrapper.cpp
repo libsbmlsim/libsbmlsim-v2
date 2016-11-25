@@ -1,8 +1,12 @@
 #include "sbmlsim/internal/wrapper/EventWrapper.h"
+#include "sbmlsim/internal/util/ASTNodeUtil.h"
 
 EventWrapper::EventWrapper(const Event *event) {
-  this->trigger = event->getTrigger()->getMath()->deepCopy();
   this->triggerState = false;
+
+  this->trigger = ASTNodeUtil::rewriteFunctionDefinition(
+      event->getTrigger()->getMath(),
+      event->getModel()->getListOfFunctionDefinitions());
 
   for (auto i = 0; i < event->getNumEventAssignments(); i++) {
     auto eventAssignment = event->getEventAssignment(i);
