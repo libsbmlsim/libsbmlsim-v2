@@ -102,8 +102,10 @@ ASTNode *ASTNodeUtil::reduceToBinary(const ASTNode *node) {
     ret->removeChild(index);
     delete child;
   }
-  ret->addChild(leftNode);
-  ret->addChild(rightNode);
+  ret->addChild(reduceToBinary(leftNode));
+  ret->addChild(reduceToBinary(rightNode));
+  delete leftNode;
+  delete rightNode;
 
   return ret;
 }
