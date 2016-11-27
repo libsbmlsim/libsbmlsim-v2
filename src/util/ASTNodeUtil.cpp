@@ -88,14 +88,12 @@ ASTNode *ASTNodeUtil::reduceToBinary(const ASTNode *node) {
   //              x   y
   //
 
-  auto rightNode = reduceToBinary(node->getRightChild());
-
   auto leftNode = node->deepCopy();
   auto rightOfLeftNode = leftNode->getRightChild();
   leftNode->removeChild(leftNode->getNumChildren() - 1);
   delete rightOfLeftNode;
 
-  auto *ret = node->deepCopy();
+  auto ret = node->deepCopy();
   while (ret->getNumChildren() > 0) {
     auto index = ret->getNumChildren() - 1;
     auto child = ret->getChild(index);
@@ -103,9 +101,8 @@ ASTNode *ASTNodeUtil::reduceToBinary(const ASTNode *node) {
     delete child;
   }
   ret->addChild(reduceToBinary(leftNode));
-  ret->addChild(reduceToBinary(rightNode));
+  ret->addChild(reduceToBinary(node->getRightChild()));
   delete leftNode;
-  delete rightNode;
 
   return ret;
 }
