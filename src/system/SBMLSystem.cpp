@@ -34,7 +34,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
     auto node = reaction.getMath();
 
     auto clonedNode = ASTNodeUtil::reduceToBinary(node);
-    auto value = evaluateASTNode(clonedNode, x);
+    auto value = evaluateASTNode(clonedNode, x, t);
     delete clonedNode;
 
     // reactants
@@ -42,7 +42,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
       auto index = getStateIndexForVariable(reactant.getSpeciesId());
       double stoichiometry;
       if (reactant.hasStoichiometryMath()) {
-        stoichiometry = evaluateASTNode(reactant.getStoichiometryMath(), x);
+        stoichiometry = evaluateASTNode(reactant.getStoichiometryMath(), x, t);
       } else {
         stoichiometry = reactant.getStoichiometry();
       }
@@ -54,7 +54,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
       auto index = getStateIndexForVariable(product.getSpeciesId());
       double stoichiometry;
       if (product.hasStoichiometryMath()) {
-        stoichiometry = evaluateASTNode(product.getStoichiometryMath(), x);
+        stoichiometry = evaluateASTNode(product.getStoichiometryMath(), x, t);
       } else {
         stoichiometry = product.getStoichiometry();
       }
@@ -85,12 +85,12 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
 
 void SBMLSystem::handleEvent(state &x, double t) {
   for (auto event : model->getEvents()) {
-    bool fire = evaluateConditionalNode(event->getTrigger(), x);
+    bool fire = evaluateConditionalNode(event->getTrigger(), x, t);
     if (fire && event->getTriggerState() == false) {
       for (auto eventAssignment : event->getEventAssignments()) {
         auto variable = eventAssignment.getVariable();
         auto index = getStateIndexForVariable(variable);
-        double value = evaluateASTNode(eventAssignment.getMath(), x);
+        double value = evaluateASTNode(eventAssignment.getMath(), x, t);
         x[index] = value;
         event->setTriggerState(true);
       }
@@ -107,7 +107,7 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
 
   for (auto initialAssignment : model->getInitialAssignments()) {
     auto symbol = initialAssignment->getSymbol();
-    auto value = evaluateASTNode(initialAssignment->getMath(), x);
+    auto value = evaluateASTNode(initialAssignment->getMath(), x, t);
 
     // species
     auto specieses = model->getSpecieses();
@@ -156,7 +156,7 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
   auto &assignmentRules = this->model->getAssignmentRules();
   for (auto i = 0; i < assignmentRules.size(); i++) {
     auto &variable = assignmentRules[i]->getVariable();
-    auto value = evaluateASTNode(assignmentRules[i]->getMath(), x);
+    auto value = evaluateASTNode(assignmentRules[i]->getMath(), x, t);
 
     bool continueImmediately = false;
 
@@ -213,7 +213,7 @@ void SBMLSystem::handleAssignmentRule(state &x, double t) {
 void SBMLSystem::handleRateRule(const state &x, state &dxdt, double t) {
   for (auto rateRule : model->getRateRules()) {
     auto &variableName = rateRule->getVariable();
-    auto value = evaluateASTNode(rateRule->getMath(), x);
+    auto value = evaluateASTNode(rateRule->getMath(), x, t);
     auto index = getStateIndexForVariable(variableName);
 
     // species
@@ -267,33 +267,41 @@ std::vector<ObserveTarget> SBMLSystem::createOutputTargetsFromOutputFields(
   return ret;
 }
 
-double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x) {
+double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t) {
   double left, right;
 
+  // lambda
+  auto evaluateASTNodeLambda = [&](const ASTNode *node) {
+    return evaluateASTNode(node, x, t);
+  };
+
+  // evaluate recursively
   ASTNodeType_t type = node->getType();
   switch (type) {
     case AST_NAME:
-      return evaluateNameNode(node, x);
+      return evaluateNameNode(node, x, t);
+    case AST_NAME_TIME:
+      return t;
     case AST_PLUS:
-      left = evaluateASTNode(node->getLeftChild(), x);
-      right = evaluateASTNode(node->getRightChild(), x);
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
       return left + right;
     case AST_MINUS:
-      left = evaluateASTNode(node->getLeftChild(), x);
-      right = evaluateASTNode(node->getRightChild(), x);
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
       return left - right;
     case AST_TIMES:
-      left = evaluateASTNode(node->getLeftChild(), x);
-      right = evaluateASTNode(node->getRightChild(), x);
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
       return left * right;
     case AST_DIVIDE:
-      left = evaluateASTNode(node->getLeftChild(), x);
-      right = evaluateASTNode(node->getRightChild(), x);
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
       return left / right;
     case AST_POWER:
     case AST_FUNCTION_POWER:
-      left = evaluateASTNode(node->getLeftChild(), x);
-      right = evaluateASTNode(node->getRightChild(), x);
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
       return MathUtil::pow(left, right);
     case AST_REAL:
       return node->getReal();
@@ -303,13 +311,13 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x) {
     case AST_REAL_E:
       return node->getValue();
     case AST_FUNCTION_FACTORIAL:
-      return evaluateFactorialNode(node, x);
+      return evaluateFactorialNode(node, x, t);
     case AST_FUNCTION_CEILING:
-      return MathUtil::ceil(evaluateASTNode(node->getLeftChild(), x));
+      return MathUtil::ceil(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_FLOOR:
-      return MathUtil::floor(evaluateASTNode(node->getLeftChild(), x));
+      return MathUtil::floor(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_PIECEWISE:
-      return evaluatePiecewiseNode(node, x);
+      return evaluatePiecewiseNode(node, x, t);
     default:
       std::cout << "type = " << type << std::endl;
       break;
@@ -317,7 +325,7 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x) {
   return 0;
 }
 
-double SBMLSystem::evaluateNameNode(const ASTNode *node, const state &x) {
+double SBMLSystem::evaluateNameNode(const ASTNode *node, const state &x, double t) {
   auto name = node->getName();
 
   // species
@@ -363,13 +371,13 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, const state &x) {
   return 0.0;
 }
 
-double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x) {
+double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x, double t) {
   const ASTNode *left = node->getLeftChild();
   long long leftValue;
   ASTNodeType_t leftType = left->getType();
   switch (leftType) {
     case AST_FUNCTION_CEILING:
-      leftValue = MathUtil::ceil(evaluateASTNode(left->getLeftChild(), x));
+      leftValue = MathUtil::ceil(evaluateASTNode(left->getLeftChild(), x, t));
       return MathUtil::factorial(leftValue);
     default:
       break;
@@ -381,24 +389,33 @@ double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x) {
   return 0.0;
 }
 
-double SBMLSystem::evaluatePiecewiseNode(const ASTNode *node, const state &x) {
+double SBMLSystem::evaluatePiecewiseNode(const ASTNode *node, const state &x, double t) {
   // piece nodes
   for (auto i = 0; i < node->getNumChildren() - 1; i += 2) {
     auto conditionalNode = node->getChild(i + 1);
-    if (evaluateConditionalNode(conditionalNode, x)) {
-      return evaluateASTNode(node->getChild(i), x);
+    if (evaluateConditionalNode(conditionalNode, x, t)) {
+      return evaluateASTNode(node->getChild(i), x, t);
     }
   }
 
   // otherwise node
   auto otherwiseNode = node->getRightChild();
-  return evaluateASTNode(otherwiseNode, x);
+  return evaluateASTNode(otherwiseNode, x, t);
 }
 
-bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x) {
+bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x, double t) {
   double left, right;
   bool leftCondition, rightCondition;
 
+  // lambda
+  auto evaluateASTNodeLambda = [&](const ASTNode *node) {
+    return evaluateASTNode(node, x, t);
+  };
+  auto evaluateConditionalNodeLambda = [&](const ASTNode *node) {
+    return evaluateConditionalNode(node, x, t);
+  };
+
+  // evaluate recursively
   auto type = node->getType();
   switch (type) {
     case AST_CONSTANT_TRUE:
@@ -406,38 +423,38 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x) {
     case AST_CONSTANT_FALSE:
       return false;
     case AST_RELATIONAL_LT:
-      left = evaluateASTNode(node->getLeftChild(), x);
-      right = evaluateASTNode(node->getRightChild(), x);
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
       return left < right;
     case AST_RELATIONAL_LEQ:
-      left = evaluateASTNode(node->getLeftChild(), x);
-      right = evaluateASTNode(node->getRightChild(), x);
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
       return left <= right;
     case AST_RELATIONAL_GT:
-      left = evaluateASTNode(node->getLeftChild(), x);
-      right = evaluateASTNode(node->getRightChild(), x);
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
       return left > right;
     case AST_RELATIONAL_GEQ:
-      left = evaluateASTNode(node->getLeftChild(), x);
-      right = evaluateASTNode(node->getRightChild(), x);
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
       return left >= right;
     case AST_LOGICAL_AND:
-      leftCondition = evaluateConditionalNode(node->getLeftChild(), x);
+      leftCondition = evaluateConditionalNodeLambda(node->getLeftChild());
       if (!leftCondition) {
         return false;
       }
-      rightCondition = evaluateConditionalNode(node->getRightChild(), x);
+      rightCondition = evaluateConditionalNodeLambda(node->getRightChild());
       return rightCondition;
     case AST_LOGICAL_OR:
-      leftCondition = evaluateConditionalNode(node->getLeftChild(), x);
+      leftCondition = evaluateConditionalNodeLambda(node->getLeftChild());
       if (leftCondition) {
         return true;
       }
-      rightCondition = evaluateConditionalNode(node->getRightChild(), x);
+      rightCondition = evaluateConditionalNodeLambda(node->getRightChild());
       return rightCondition;
     case AST_LOGICAL_XOR:
-      leftCondition = evaluateConditionalNode(node->getLeftChild(), x);
-      rightCondition = evaluateConditionalNode(node->getRightChild(), x);
+      leftCondition = evaluateConditionalNodeLambda(node->getLeftChild());
+      rightCondition = evaluateConditionalNodeLambda(node->getRightChild());
       return leftCondition ^ rightCondition;
     default:
       break;

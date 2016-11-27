@@ -32,12 +32,12 @@ class SBMLSystem {
   state initialState;
   std::unordered_map<std::string, unsigned int> stateIndexMap;
   void handleRateRule(const state &x, state &dxdt, double t);
-  double evaluateASTNode(const ASTNode *node, const state &x);
-  double evaluateNameNode(const ASTNode *node, const state &x);
-  double evaluateFunctionNode(const ASTNode *node, const state &x);
-  double evaluateFactorialNode(const ASTNode *node, const state &x);
-  double evaluatePiecewiseNode(const ASTNode *node, const state &x);
-  bool evaluateConditionalNode(const ASTNode *node, const state &x);
+  double evaluateASTNode(const ASTNode *node, const state &x, double t);
+  double evaluateNameNode(const ASTNode *node, const state &x, double t);
+  double evaluateFunctionNode(const ASTNode *node, const state &x, double t);
+  double evaluateFactorialNode(const ASTNode *node, const state &x, double t);
+  double evaluatePiecewiseNode(const ASTNode *node, const state &x, double t);
+  bool evaluateConditionalNode(const ASTNode *node, const state &x, double t);
   void prepareInitialState();
 };
 
