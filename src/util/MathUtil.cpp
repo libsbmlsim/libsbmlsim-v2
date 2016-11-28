@@ -37,6 +37,10 @@ double MathUtil::pow(double x, double y) {
   return ::pow(x, y);
 }
 
+double MathUtil::exp(double x) {
+  return ::exp(x);
+}
+
 ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
   ASTNode *rtn = new ASTNode();
 
