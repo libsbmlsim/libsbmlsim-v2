@@ -58,7 +58,7 @@ void SBMLSim::simulateRungeKutta4(const ModelWrapper *model, const RunConfigurat
 void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfiguration &conf) {
   SBMLSystem system(model);
   auto stepper = odeint::make_controlled<odeint::runge_kutta_dopri5<state> >(
-      conf.getAbsoluteTolerance(), conf.getRelativeTolerance());
+      conf.getAbsoluteTolerance() / 100.0, conf.getRelativeTolerance() / 100.0);
   auto initialState = system.getInitialState();
   StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
 
@@ -73,7 +73,7 @@ void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfi
 void SBMLSim::simulateRungeKuttaFehlberg78(const ModelWrapper *model, const RunConfiguration &conf) {
   SBMLSystem system(model);
   auto stepper = odeint::make_controlled<odeint::runge_kutta_fehlberg78<state> >(
-      conf.getAbsoluteTolerance(), conf.getRelativeTolerance());
+      conf.getAbsoluteTolerance() / 100.0, conf.getRelativeTolerance() / 100.0);
   auto initialState = system.getInitialState();
   StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
 
@@ -89,7 +89,7 @@ void SBMLSim::simulateRosenbrock4(const ModelWrapper *model, const RunConfigurat
   SBMLSystem system(model);
   SBMLSystemJacobi systemJacobi;
   auto initialState = system.getInitialState();
-  auto stepper = odeint::make_dense_output(conf.getAbsoluteTolerance(), conf.getRelativeTolerance(),
+  auto stepper = odeint::make_dense_output(conf.getAbsoluteTolerance() / 100.0, conf.getRelativeTolerance() / 100.0,
                                            odeint::rosenbrock4<double>());
   auto implicitSystem = std::make_pair(system, systemJacobi);
   StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
