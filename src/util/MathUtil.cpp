@@ -41,6 +41,10 @@ double MathUtil::exp(double x) {
   return ::exp(x);
 }
 
+double MathUtil::fabs(double x) {
+  return ::fabs(x);
+}
+
 ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
   ASTNode *rtn = new ASTNode();
 

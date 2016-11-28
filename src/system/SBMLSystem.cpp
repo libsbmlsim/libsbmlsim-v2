@@ -312,6 +312,8 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
       return node->getValue();
     case AST_FUNCTION_EXP:
       return MathUtil::exp(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ABS:
+      return MathUtil::fabs(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_FACTORIAL:
       return evaluateFactorialNode(node, x, t);
     case AST_FUNCTION_CEILING:

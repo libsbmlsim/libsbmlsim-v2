@@ -11,6 +11,7 @@ class MathUtil {
   static long long floor(double f);
   static double pow(double x, double y);
   static double exp(double x);
+  static double fabs(double x);
   static bool containsTarget(const ASTNode *ast, std::string target);
   static ASTNode* simplify(const ASTNode *ast);
   static ASTNode* differentiate(const ASTNode *ast, std::string target);
