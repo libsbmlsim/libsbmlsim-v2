@@ -287,10 +287,10 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
       right = evaluateASTNodeLambda(node->getRightChild());
       return left + right;
     case AST_MINUS:
+      left = evaluateASTNodeLambda(node->getLeftChild());
       if (node->getNumChildren() == 1) {
-        return evaluateASTNodeLambda(node->getLeftChild());
+        return - left;
       } else {
-        left = evaluateASTNodeLambda(node->getLeftChild());
         right = evaluateASTNodeLambda(node->getRightChild());
         return left - right;
       }
