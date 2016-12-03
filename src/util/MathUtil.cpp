@@ -1,5 +1,6 @@
 #include "sbmlsim/internal/util/MathUtil.h"
 #include <cmath>
+#include <sbmlsim/internal/util/ASTNodeUtil.h>
 
 const unsigned long long FACTORIAL_TABLE[] = { // size 20
     1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800,
@@ -46,179 +47,180 @@ double MathUtil::fabs(double x) {
 }
 
 ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
-  ASTNode *rtn = new ASTNode();
+  ASTNode *binaryTree = ASTNodeUtil::reduceToBinary(ast);
+  ASTNode *differentiatedRoot = new ASTNode();
 
-  if (containsTarget(ast, target) == 0) {
-    rtn->setType(AST_INTEGER);
-    rtn->setValue(0);
-    return rtn;
+  if (containsTarget(binaryTree, target) == 0) {
+    differentiatedRoot->setType(AST_INTEGER);
+    differentiatedRoot->setValue(0);
+    return differentiatedRoot;
   }
 
-  switch (ast->getType()) {
+  switch (binaryTree->getType()) {
     case AST_PLUS:
       /* d{u+v}/dx = du/dx + dv/dx */
-      rtn->setType(AST_PLUS);
-      rtn->addChild(differentiate(ast->getLeftChild(), target));
-      rtn->addChild(differentiate(ast->getRightChild(), target));
+      differentiatedRoot->setType(AST_PLUS);
+      differentiatedRoot->addChild(differentiate(binaryTree->getLeftChild(), target));
+      differentiatedRoot->addChild(differentiate(binaryTree->getRightChild(), target));
       break;
     case AST_MINUS:
       /* d{u-v}/dx = du/dx - dv/dx */
-      rtn->setType(AST_MINUS);
-      rtn->addChild(differentiate(ast->getLeftChild(), target));
-      rtn->addChild(differentiate(ast->getRightChild(), target));
+      differentiatedRoot->setType(AST_MINUS);
+      differentiatedRoot->addChild(differentiate(binaryTree->getLeftChild(), target));
+      differentiatedRoot->addChild(differentiate(binaryTree->getRightChild(), target));
       break;
     case AST_TIMES: {
       /* d{u*v}/dx = u * dv/dx + v * du/dx */
-      rtn->setType(AST_PLUS);
+      differentiatedRoot->setType(AST_PLUS);
       ASTNode *left = new ASTNode(AST_TIMES);
-      left->addChild(differentiate(ast->getLeftChild(), target));
-      left->addChild(ast->getRightChild()->deepCopy());
-      rtn->addChild(left);
+      left->addChild(differentiate(binaryTree->getLeftChild(), target));
+      left->addChild(binaryTree->getRightChild()->deepCopy());
+      differentiatedRoot->addChild(left);
       ASTNode *right = new ASTNode(AST_TIMES);
-      right->addChild(ast->getLeftChild()->deepCopy());
-      right->addChild(differentiate(ast->getRightChild(), target));
-      rtn->addChild(right);
+      right->addChild(binaryTree->getLeftChild()->deepCopy());
+      right->addChild(differentiate(binaryTree->getRightChild(), target));
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_DIVIDE: {
       /* d{u/v}/dx = (v * du/dx - u * dv/dx) / v^2 */
-      rtn->setType(AST_DIVIDE);
-      if (containsTarget(ast->getRightChild(), target) == 0) {
-        rtn->addChild(differentiate(ast->getLeftChild(), target));
-        rtn->addChild(ast->getRightChild()->deepCopy());
+      differentiatedRoot->setType(AST_DIVIDE);
+      if (containsTarget(binaryTree->getRightChild(), target) == 0) {
+        differentiatedRoot->addChild(differentiate(binaryTree->getLeftChild(), target));
+        differentiatedRoot->addChild(binaryTree->getRightChild()->deepCopy());
         break;
       }
       ASTNode *left = new ASTNode(AST_MINUS);
       ASTNode *ll = new ASTNode(AST_TIMES);
       ASTNode *lr = new ASTNode(AST_TIMES);
-      ll->addChild(differentiate(ast->getLeftChild(), target));
-      ll->addChild(ast->getRightChild()->deepCopy());
-      lr->addChild(ast->getLeftChild()->deepCopy());
-      lr->addChild(differentiate(ast->getRightChild(), target));
+      ll->addChild(differentiate(binaryTree->getLeftChild(), target));
+      ll->addChild(binaryTree->getRightChild()->deepCopy());
+      lr->addChild(binaryTree->getLeftChild()->deepCopy());
+      lr->addChild(differentiate(binaryTree->getRightChild(), target));
       left->addChild(ll);
       left->addChild(lr);
       ASTNode *right = new ASTNode(AST_FUNCTION_POWER);
-      right->addChild(ast->getRightChild()->deepCopy());
+      right->addChild(binaryTree->getRightChild()->deepCopy());
       ASTNode *rr = new ASTNode(AST_INTEGER);
       rr->setValue(2);
       right->addChild(rr);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_POWER:
     case AST_POWER: {
       /* d{u^v}/dx = v * u^(v-1) * du/dx + u^v * ln(u) * dv/dx */
-      rtn->setType(AST_PLUS);
+      differentiatedRoot->setType(AST_PLUS);
       // LHS
       ASTNode *left = new ASTNode(AST_TIMES);
       ASTNode *minus = new ASTNode(AST_MINUS);
       ASTNode *one = new ASTNode(AST_INTEGER);
       one->setValue(1);
-      minus->addChild(ast->getRightChild()->deepCopy()); // add v
+      minus->addChild(binaryTree->getRightChild()->deepCopy()); // add v
       minus->addChild(one);
       ASTNode *power = new ASTNode(AST_POWER);
-      power->addChild(ast->getLeftChild()->deepCopy()); // add u
+      power->addChild(binaryTree->getLeftChild()->deepCopy()); // add u
       power->addChild(minus);
       ASTNode *ll = new ASTNode(AST_TIMES);
-      ll->addChild(ast->getRightChild()->deepCopy());  // add v
+      ll->addChild(binaryTree->getRightChild()->deepCopy());  // add v
       ll->addChild(power);
-      ASTNode *lr = differentiate(ast->getLeftChild(), target); // du/dx
+      ASTNode *lr = differentiate(binaryTree->getLeftChild(), target); // du/dx
       left->addChild(ll);
       left->addChild(lr);
       // RHS
       ASTNode *right = new ASTNode(AST_TIMES);
       ASTNode *rl = new ASTNode(AST_POWER);
-      rl->addChild(ast->getLeftChild()->deepCopy());  // add u
-      rl->addChild(ast->getRightChild()->deepCopy()); // add v
+      rl->addChild(binaryTree->getLeftChild()->deepCopy());  // add u
+      rl->addChild(binaryTree->getRightChild()->deepCopy()); // add v
       ASTNode *rr = new ASTNode(AST_TIMES);
       ASTNode *ln = new ASTNode(AST_FUNCTION_LN);
-      ln->addChild(ast->getLeftChild()->deepCopy());  // add u
+      ln->addChild(binaryTree->getLeftChild()->deepCopy());  // add u
       rr->addChild(ln);
-      rr->addChild(differentiate(ast->getRightChild()->deepCopy(), target)); // add dv/dx
+      rr->addChild(differentiate(binaryTree->getRightChild()->deepCopy(), target)); // add dv/dx
       right->addChild(rl);
       right->addChild(rr);
       // add left and right
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_ROOT: {
       /* convert root(n, x) to x^(-1 * n) */
       ASTNode *power = new ASTNode(AST_POWER);
-      ASTNode *left = ast->getRightChild()->deepCopy();
+      ASTNode *left = binaryTree->getRightChild()->deepCopy();
       ASTNode *right = new ASTNode(AST_DIVIDE);
       ASTNode *rl = new ASTNode();
       rl->setValue(1);
-      ASTNode *rr = ast->getLeftChild()->deepCopy();
+      ASTNode *rr = binaryTree->getLeftChild()->deepCopy();
       right->addChild(rl);
       right->addChild(rr);
       power->addChild(left);
       power->addChild(right);
-      rtn = differentiate(power, target);
+      differentiatedRoot = differentiate(power, target);
       break;
     }
     case AST_FUNCTION_SIN: {
       /* d{sin(u)}/dx = du/dx * cos(u) */
-      rtn->setType(AST_TIMES);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_TIMES);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_FUNCTION_COS);
-      right->addChild(ast->getLeftChild()->deepCopy());
-      rtn->addChild(left);
-      rtn->addChild(right);
+      right->addChild(binaryTree->getLeftChild()->deepCopy());
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_COS: {
       /* d{cos(u)}/dx = -1 * du/dx * sin(u) */
-      rtn->setType(AST_TIMES);
+      differentiatedRoot->setType(AST_TIMES);
       ASTNode *left = new ASTNode(AST_TIMES);
       ASTNode *ll = new ASTNode(AST_INTEGER);
       ll->setValue(-1);
       left->addChild(ll);
-      left->addChild(differentiate(ast->getLeftChild(), target));
+      left->addChild(differentiate(binaryTree->getLeftChild(), target));
       ASTNode *right = new ASTNode(AST_FUNCTION_SIN);
-      right->addChild(ast->getLeftChild()->deepCopy());
-      rtn->addChild(left);
-      rtn->addChild(right);
+      right->addChild(binaryTree->getLeftChild()->deepCopy());
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_TAN: {
       /* d{tan(u)}/dx = du/dx * sec(u)^2 */
-      rtn->setType(AST_TIMES);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_TIMES);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_POWER);
       ASTNode *rl = new ASTNode(AST_FUNCTION_SEC);
-      ASTNode *tmpl = ast->getLeftChild()->deepCopy();
+      ASTNode *tmpl = binaryTree->getLeftChild()->deepCopy();
       rl->addChild(tmpl);
       ASTNode *rr = new ASTNode();
       rr->setValue(2);
       right->addChild(rl);
       right->addChild(rr);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_SEC: {
       /* d{sec(u)}/dx = du/dx * sec(u) * tan(u) */
-      rtn->setType(AST_TIMES);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_TIMES);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_TIMES);
       ASTNode *rl = new ASTNode(AST_FUNCTION_SEC);
-      rl->addChild(ast->getLeftChild()->deepCopy());
+      rl->addChild(binaryTree->getLeftChild()->deepCopy());
       ASTNode *rr = new ASTNode(AST_FUNCTION_TAN);
-      rr->addChild(ast->getLeftChild()->deepCopy());
+      rr->addChild(binaryTree->getLeftChild()->deepCopy());
       right->addChild(rl);
       right->addChild(rr);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_COT: {
       /* d{cot(u)}/dx = -1 * du/dx * cosec(u)^2   */
       /*              = -1 * du/dx / sin(u)^2 */
       /*     cosec(u) = 1 / sin(u) */
-      rtn->setType(AST_TIMES);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_TIMES);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_DIVIDE);
       ASTNode *rl = new ASTNode();
       rl->setValue(-1);
@@ -226,73 +228,73 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *sin = new ASTNode(AST_FUNCTION_SIN);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      ASTNode *u = ast->getLeftChild()->deepCopy();
+      ASTNode *u = binaryTree->getLeftChild()->deepCopy();
       sin->addChild(u);
       rr->addChild(sin);
       rr->addChild(two);
       right->addChild(rl);
       right->addChild(rr);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_SINH: {
       /* d{sinh(u)}/dx = du/dx * cosh(u) */
-      rtn->setType(AST_TIMES);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_TIMES);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_FUNCTION_COSH);
-      right->addChild(ast->getLeftChild()->deepCopy());
-      rtn->addChild(left);
-      rtn->addChild(right);
+      right->addChild(binaryTree->getLeftChild()->deepCopy());
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_COSH: {
       /* d{cosh(u)}/dx = du/dx * sinh(u) */
-      rtn->setType(AST_TIMES);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_TIMES);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_FUNCTION_SINH);
-      right->addChild(ast->getLeftChild()->deepCopy());
-      rtn->addChild(left);
-      rtn->addChild(right);
+      right->addChild(binaryTree->getLeftChild()->deepCopy());
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_TANH: {
       /* d{tanh(u)}/dx = du/dx * sech(u)^2 */
-      rtn->setType(AST_TIMES);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_TIMES);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_POWER);
       ASTNode *rl = new ASTNode(AST_FUNCTION_SECH);
-      rl->addChild(ast->getLeftChild());
+      rl->addChild(binaryTree->getLeftChild());
       ASTNode *rr = new ASTNode();
       rr->setValue(2);
       right->addChild(rl);
       right->addChild(rr);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_SECH: {
       /* d{sech(u)}/dx = - du/dx * sech(u) * tanh(u) */
-      rtn->setType(AST_TIMES);
+      differentiatedRoot->setType(AST_TIMES);
       ASTNode *minus = new ASTNode();
       minus->setValue(-1);
-      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *sech = new ASTNode(AST_FUNCTION_SECH);
-      sech->addChild(ast->getLeftChild()->deepCopy());
+      sech->addChild(binaryTree->getLeftChild()->deepCopy());
       ASTNode *tanh = new ASTNode(AST_FUNCTION_TANH);
-      tanh->addChild(ast->getLeftChild()->deepCopy());
-      rtn->addChild(minus);
-      rtn->addChild(dudx);
-      rtn->addChild(sech);
-      rtn->addChild(tanh);
+      tanh->addChild(binaryTree->getLeftChild()->deepCopy());
+      differentiatedRoot->addChild(minus);
+      differentiatedRoot->addChild(dudx);
+      differentiatedRoot->addChild(sech);
+      differentiatedRoot->addChild(tanh);
       break;
     }
     case AST_FUNCTION_COTH: {
       /* d{coth(u)}/dx = - du/dx * cosech(u)^2 */
       /*               = - du/dx / sinh(u)^2   */
       /*     cosech(u) = 1 / sinh(u)           */
-      rtn->setType(AST_TIMES);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_TIMES);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_DIVIDE);
       ASTNode *rl = new ASTNode();
       rl->setValue(-1);
@@ -300,20 +302,20 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *sin = new ASTNode(AST_FUNCTION_SINH);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      ASTNode *u = ast->getLeftChild()->deepCopy();
+      ASTNode *u = binaryTree->getLeftChild()->deepCopy();
       sin->addChild(u);
       rr->addChild(sin);
       rr->addChild(two);
       right->addChild(rl);
       right->addChild(rr);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_ARCSIN: {
       /* d{asin(u)}/dx = du/dx / sqrt(1 - u^2) */
-      rtn->setType(AST_DIVIDE);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_FUNCTION_ROOT);
       ASTNode *square = new ASTNode();
       square->setValue(2);
@@ -323,23 +325,23 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       minus->addChild(one);
       minus->addChild(power);
       right->addChild(square);
       right->addChild(minus);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_ARCCOS: {
       /* d{acos(u)}/dx = - du/dx / sqrt(1 - u^2) */
-      rtn->setType(AST_DIVIDE);
+      differentiatedRoot->setType(AST_DIVIDE);
       ASTNode *left = new ASTNode(AST_TIMES);
       ASTNode *minusone = new ASTNode();
       minusone->setValue(-1);
-      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_FUNCTION_ROOT);
       ASTNode *square = new ASTNode();
       square->setValue(2);
@@ -349,7 +351,7 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       minus->addChild(one);
       minus->addChild(power);
@@ -357,32 +359,32 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       right->addChild(minus);
       left->addChild(minusone);
       left->addChild(dudx);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_ARCTAN: {
       /* d{atan(u)}/dx = du/dx / (1 + u^2) */
-      rtn->setType(AST_DIVIDE);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_PLUS);
       ASTNode *one = new ASTNode();
       one->setValue(1);
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       right->addChild(one);
       right->addChild(power);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_ARCSEC: {
       /* d{arcsec(u)}/dx = du/dx / (|u| * sqrt(u^2 - 1)) */
-      rtn->setType(AST_DIVIDE);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_TIMES);
       ASTNode *abs = new ASTNode();
       abs->setType(AST_FUNCTION_ABS);
@@ -395,27 +397,27 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       minus->addChild(power);
       minus->addChild(one);
       root->addChild(two);
       root->addChild(minus);
-      abs->addChild(ast->getLeftChild()->deepCopy());
+      abs->addChild(binaryTree->getLeftChild()->deepCopy());
       right->addChild(abs);
       right->addChild(root);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_ARCCSC: {
       /* d{arccsc(u)}/dx = - du/dx / (|u| * sqrt(u^2 - 1)) */
-      rtn->setType(AST_TIMES);
+      differentiatedRoot->setType(AST_TIMES);
       ASTNode *minusone = new ASTNode();
       minusone->setValue(-1);
       ASTNode *divide = new ASTNode(AST_DIVIDE);
       divide->setType(AST_DIVIDE);
-      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *times = new ASTNode(AST_TIMES);
       ASTNode *abs = new ASTNode(AST_FUNCTION_ABS);
       ASTNode *root = new ASTNode(AST_FUNCTION_ROOT);
@@ -427,48 +429,48 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       minus->addChild(power);
       minus->addChild(one);
       root->addChild(two);
       root->addChild(minus);
-      abs->addChild(ast->getLeftChild()->deepCopy());
+      abs->addChild(binaryTree->getLeftChild()->deepCopy());
       times->addChild(abs);
       times->addChild(root);
       divide->addChild(dudx);
       divide->addChild(times);
-      rtn->addChild(minusone);
-      rtn->addChild(divide);
+      differentiatedRoot->addChild(minusone);
+      differentiatedRoot->addChild(divide);
       break;
     }
     case AST_FUNCTION_ARCCOT: {
       /* d{arccot(u)}/dx = - du/dx / (1 + u^2) */
-      rtn->setType(AST_TIMES);
+      differentiatedRoot->setType(AST_TIMES);
       ASTNode *minusone = new ASTNode();
       minusone->setValue(-1);
       ASTNode *divide = new ASTNode(AST_DIVIDE);
-      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *plus = new ASTNode(AST_PLUS);
       ASTNode *one = new ASTNode();
       one->setValue(1);
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       plus->addChild(one);
       plus->addChild(power);
       divide->addChild(dudx);
       divide->addChild(plus);
-      rtn->addChild(minusone);
-      rtn->addChild(divide);
+      differentiatedRoot->addChild(minusone);
+      differentiatedRoot->addChild(divide);
       break;
     }
     case AST_FUNCTION_ARCSINH: {
       /* d{arcsinh(u)}/dx = du/dx / sqrt(1 + u^2) */
-      rtn->setType(AST_DIVIDE);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_FUNCTION_ROOT);
       ASTNode *square = new ASTNode();
       square->setValue(2);
@@ -478,20 +480,20 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       plus->addChild(one);
       plus->addChild(power);
       right->addChild(square);
       right->addChild(plus);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_ARCCOSH: {
       /* d{arccosh(u)}/dx = du/dx / sqrt(u^2 - 1) */
-      rtn->setType(AST_DIVIDE);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_FUNCTION_ROOT);
       ASTNode *square = new ASTNode();
       square->setValue(2);
@@ -501,42 +503,42 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       minus->addChild(power);
       minus->addChild(one);
       right->addChild(square);
       right->addChild(minus);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_ARCTANH: {
       /* d{arctanh(u)}/dx = du/dx / (1 - u^2) */
-      rtn->setType(AST_DIVIDE);
-      ASTNode *left = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_DIVIDE);
+      ASTNode *left = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *right = new ASTNode(AST_MINUS);
       ASTNode *one = new ASTNode();
       one->setValue(1);
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       right->addChild(one);
       right->addChild(power);
-      rtn->addChild(left);
-      rtn->addChild(right);
+      differentiatedRoot->addChild(left);
+      differentiatedRoot->addChild(right);
       break;
     }
     case AST_FUNCTION_ARCSECH: {
       /* d{arcsech(u)}/dx = - du/dx / (u * sqrt(1 - u^2)) */
-      rtn->setType(AST_TIMES);
+      differentiatedRoot->setType(AST_TIMES);
       ASTNode *minusone = new ASTNode();
       minusone->setValue(-1);
       ASTNode *divide = new ASTNode(AST_DIVIDE);
       divide->setType(AST_DIVIDE);
-      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *times = new ASTNode(AST_TIMES);
       ASTNode *root = new ASTNode(AST_FUNCTION_ROOT);
       ASTNode *square = new ASTNode();
@@ -547,28 +549,28 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       minus->addChild(one);
       minus->addChild(power);
       root->addChild(two);
       root->addChild(minus);
-      times->addChild(ast->getLeftChild()->deepCopy());
+      times->addChild(binaryTree->getLeftChild()->deepCopy());
       times->addChild(root);
       divide->addChild(dudx);
       divide->addChild(times);
-      rtn->addChild(minusone);
-      rtn->addChild(divide);
+      differentiatedRoot->addChild(minusone);
+      differentiatedRoot->addChild(divide);
       break;
     }
     case AST_FUNCTION_ARCCSCH: {
       /* d{arccsch(u)}/dx = - du/dx / (u * sqrt(1 + u^2)) */
-      rtn->setType(AST_TIMES);
+      differentiatedRoot->setType(AST_TIMES);
       ASTNode *minusone = new ASTNode();
       minusone->setValue(-1);
       ASTNode *divide = new ASTNode(AST_DIVIDE);
       divide->setType(AST_DIVIDE);
-      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *times = new ASTNode(AST_TIMES);
       ASTNode *root = new ASTNode(AST_FUNCTION_ROOT);
       ASTNode *square = new ASTNode();
@@ -579,74 +581,86 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       plus->addChild(power);
       plus->addChild(one);
       root->addChild(two);
       root->addChild(plus);
-      times->addChild(ast->getLeftChild()->deepCopy());
+      times->addChild(binaryTree->getLeftChild()->deepCopy());
       times->addChild(root);
       divide->addChild(dudx);
       divide->addChild(times);
-      rtn->addChild(minusone);
-      rtn->addChild(divide);
+      differentiatedRoot->addChild(minusone);
+      differentiatedRoot->addChild(divide);
       break;
     }
     case AST_FUNCTION_ARCCOTH: {
       /* d{arccoth(u)}/dx =   du/dx / (1 - u^2) */
-      rtn->setType(AST_TIMES);
+      differentiatedRoot->setType(AST_TIMES);
       ASTNode *plusone = new ASTNode();
       plusone->setValue(1);
       ASTNode *divide = new ASTNode(AST_DIVIDE);
-      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *minus = new ASTNode(AST_MINUS);
       ASTNode *one = new ASTNode();
       one->setValue(1);
       ASTNode *power = new ASTNode(AST_POWER);
       ASTNode *two = new ASTNode();
       two->setValue(2);
-      power->addChild(ast->getLeftChild()->deepCopy());
+      power->addChild(binaryTree->getLeftChild()->deepCopy());
       power->addChild(two);
       minus->addChild(one);
       minus->addChild(power);
       divide->addChild(dudx);
       divide->addChild(minus);
-      rtn->addChild(plusone);
-      rtn->addChild(divide);
+      differentiatedRoot->addChild(plusone);
+      differentiatedRoot->addChild(divide);
       break;
     }
     case AST_FUNCTION_EXP: {
       /* d{exp(u)}/dx = du/dx * exp(u) */
-      rtn->setType(AST_TIMES);
-      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
-      ASTNode *exp = ast->deepCopy();
-      rtn->addChild(dudx);
-      rtn->addChild(exp);
+      differentiatedRoot->setType(AST_TIMES);
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target);
+      ASTNode *exp = binaryTree->deepCopy();
+      differentiatedRoot->addChild(dudx);
+      differentiatedRoot->addChild(exp);
       break;
     }
     case AST_FUNCTION_LN: {
       /* d{ln(u)}/dx = du/dx / u */
-      rtn->setType(AST_DIVIDE);
-      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
-      ASTNode *u = ast->getLeftChild()->deepCopy();
-      rtn->addChild(dudx);
-      rtn->addChild(u);
+      differentiatedRoot->setType(AST_DIVIDE);
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target);
+      ASTNode *u = binaryTree->getLeftChild()->deepCopy();
+      differentiatedRoot->addChild(dudx);
+      differentiatedRoot->addChild(u);
       break;
     }
     case AST_FUNCTION_LOG: {
       /* d{log_base(u)}/dx = du/dx / (u * ln(base)) */
-      rtn->setType(AST_DIVIDE);
-      ASTNode *base = ast->getLeftChild()->deepCopy();
-      ASTNode *dudx = differentiate(ast->getRightChild(), target);
-      ASTNode *u = ast->getRightChild()->deepCopy();
+      differentiatedRoot->setType(AST_DIVIDE);
+      ASTNode *base = binaryTree->getLeftChild()->deepCopy();
+      ASTNode *dudx = differentiate(binaryTree->getRightChild(), target);
+      ASTNode *u = binaryTree->getRightChild()->deepCopy();
       ASTNode *times = new ASTNode(AST_TIMES);
       ASTNode *ln = new ASTNode(AST_FUNCTION_LN);
       ln->addChild(base);
       times->addChild(u);
       times->addChild(ln);
-      rtn->addChild(dudx);
-      rtn->addChild(times);
+      differentiatedRoot->addChild(dudx);
+      differentiatedRoot->addChild(times);
+      break;
+    }
+    case AST_FUNCTION_PIECEWISE: {
+      differentiatedRoot->setType(AST_FUNCTION_PIECEWISE);
+      for (int i = 0; i < binaryTree->getNumChildren(); i++) {
+        if ((i % 2) == 0) {
+          ASTNode *equation = differentiate(binaryTree->getChild(i), target);
+          differentiatedRoot->addChild(equation);
+        } else {
+          differentiatedRoot->addChild(binaryTree->getChild(i)->deepCopy());
+        }
+      }
       break;
     }
     /**
@@ -656,16 +670,16 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       /** Approximation **/
       /* d{abs(u)}/dx = du/dx * u / |u| */
       /* Note: can not be applied for some x where u(x) == 0 */
-      rtn->setType(AST_TIMES);
-      ASTNode *dudx = differentiate(ast->getLeftChild(), target);
+      differentiatedRoot->setType(AST_TIMES);
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target);
       ASTNode *divide = new ASTNode(AST_DIVIDE);
-      ASTNode *u = ast->getLeftChild()->deepCopy();
+      ASTNode *u = binaryTree->getLeftChild()->deepCopy();
       ASTNode *abs = new ASTNode(AST_FUNCTION_ABS);
-      abs->addChild(ast->getLeftChild()->deepCopy()); // |u|
+      abs->addChild(binaryTree->getLeftChild()->deepCopy()); // |u|
       divide->addChild(u);
       divide->addChild(abs);
-      rtn->addChild(dudx);
-      rtn->addChild(divide);
+      differentiatedRoot->addChild(dudx);
+      differentiatedRoot->addChild(divide);
       break;
     }
     case AST_FUNCTION_CEILING:
@@ -673,7 +687,7 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       /** Approximation **/
       /* d{ceil(u)}/dx = 0  */
       /* Note: approximation. can not be applied if u(x) == integer value */
-      rtn->setValue(0);
+      differentiatedRoot->setValue(0);
       break;
     }
     case AST_FUNCTION_FACTORIAL: {
@@ -681,9 +695,9 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       /* Stirling's approximation              */
       /*   n! == sqrt(2 * PI * n) * (n / E)^n  */
       ASTNode *stirling = new ASTNode(AST_TIMES);
-      ASTNode *n1 = ast->getLeftChild()->deepCopy();
-      ASTNode *n2 = ast->getLeftChild()->deepCopy();
-      ASTNode *n3 = ast->getLeftChild()->deepCopy();
+      ASTNode *n1 = binaryTree->getLeftChild()->deepCopy();
+      ASTNode *n2 = binaryTree->getLeftChild()->deepCopy();
+      ASTNode *n3 = binaryTree->getLeftChild()->deepCopy();
       ASTNode *sqrt = new ASTNode(AST_FUNCTION_ROOT);
       ASTNode *square = new ASTNode();
       square->setValue(2);
@@ -709,7 +723,7 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       stirling->addChild(sqrt);
       stirling->addChild(power);
       // differentiate stirling
-      rtn = differentiate(stirling, target);
+      differentiatedRoot = differentiate(stirling, target);
       break;
     }
     /**
@@ -718,22 +732,22 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
     case AST_REAL:
     case AST_INTEGER:
     case AST_NAME_TIME:
-      rtn->setType(AST_INTEGER);
-      rtn->setValue(0);
+      differentiatedRoot->setType(AST_INTEGER);
+      differentiatedRoot->setValue(0);
       break;
     case AST_NAME:
-      rtn->setType(AST_INTEGER);
-      if (ast->getName() == target) {
-        rtn->setValue(1);
+      differentiatedRoot->setType(AST_INTEGER);
+      if (binaryTree->getName() == target) {
+        differentiatedRoot->setValue(1);
       } else {
-        rtn->setValue(0);
+        differentiatedRoot->setValue(0);
       }
       break;
     default:
-      std::cout << ast->getType() << " is unknown" << std::endl;
+      std::cout << binaryTree->getType() << " is unknown" << std::endl;
       exit(1);
   }
-  rtn->reduceToBinary();
+  ASTNode* rtn = ASTNodeUtil::reduceToBinary(differentiatedRoot);
   return rtn;
 }
 
@@ -763,8 +777,23 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
     && (ast->getType() != AST_FUNCTION_POWER)
     && (ast->getType() != AST_POWER)
     && (ast->getType() != AST_FUNCTION_LN)
+    && (ast->getType() != AST_FUNCTION_PIECEWISE)
     ) {
     return ast->deepCopy();
+  }
+
+  // simplify only even index for AST_FUNCTION_PIECEWISE
+  // AST_FUNCTION_PIECEWISE is not binay tree.
+  if (ast->getType() == AST_FUNCTION_PIECEWISE) {
+    simplifiedRoot = new ASTNode(AST_FUNCTION_PIECEWISE);
+    for (auto i = 0; i < ast->getNumChildren(); i++) {
+      if (i % 2 == 0) {
+        simplifiedRoot->addChild(simplify(ast->getChild(i)));
+      } else {
+        simplifiedRoot->addChild(ast->getChild(i)->deepCopy());
+      }
+    }
+    return simplifiedRoot;
   }
 
   left  = simplify(ast->getLeftChild());
