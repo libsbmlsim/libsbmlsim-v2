@@ -781,7 +781,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
     && (binaryTree->getType() != AST_FUNCTION_COS)
     && (binaryTree->getType() != AST_FUNCTION_TAN)
       ) {
-    return binaryTree->deepCopy();
+    return binaryTree;
   }
 
   // simplify only even index for AST_FUNCTION_PIECEWISE
@@ -808,7 +808,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
       simplifiedRoot->setValue(1);
       return simplifiedRoot;
     } else {
-      return binaryTree->deepCopy();
+      return binaryTree;
     }
   } else if (binaryTree->getType() == AST_FUNCTION_SIN) {
     if (binaryTree->getLeftChild()->isNumber()) {
@@ -818,7 +818,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
         return simplifiedRoot;
       }
     }
-    return binaryTree->deepCopy();
+    return binaryTree;
   } else if (binaryTree->getType() == AST_FUNCTION_COS) {
     if (binaryTree->getLeftChild()->isNumber()) {
       if (binaryTree->getLeftChild()->getValue() == 0) {
@@ -827,7 +827,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
         return simplifiedRoot;
       }
     }
-    return binaryTree->deepCopy();
+    return binaryTree;
   } else if (binaryTree->getType() == AST_FUNCTION_TAN) {
     if (binaryTree->getLeftChild()->isNumber()) {
       if (binaryTree->getLeftChild()->getValue() == 0) {
@@ -836,7 +836,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
         return simplifiedRoot;
       }
     }
-    return binaryTree->deepCopy();
+    return binaryTree;
   }
 
   // take care on 2nd argument
