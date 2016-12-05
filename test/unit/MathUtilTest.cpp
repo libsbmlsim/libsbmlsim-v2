@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
-#include <string>
 #include "sbmlsim/SBMLSim.h"
 #include "sbmlsim/internal/util/ASTNodeUtil.h"
 #include "sbmlsim/internal/util/MathUtil.h"
-#include "sbmlsim/internal/util/StringUtil.h"
 
 namespace {
 
@@ -88,6 +86,13 @@ namespace {
     ASTNode* simp = MathUtil::simplify(ast);
     std::string s = SBML_formulaToString(simp);
     EXPECT_EQ(s, "6 * sin(x) + y + 11 + z");
+  }
+
+  TEST_F(MathUtilTest, simplifyTest10) {
+    ASTNode* ast = SBML_parseFormula("sin(2 * x) * 3");
+    ASTNode* simp = MathUtil::simplify(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "3 * sin(2 * x)");
   }
 
   TEST_F(MathUtilTest, simplifyTestPower) {
@@ -192,7 +197,7 @@ namespace {
     ASTNode* ast = SBML_parseFormula("x^(2*x)");
     ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
     std::string s = SBML_formulaToString(diff);
-    EXPECT_EQ(s, "2 * x * x^(2 * x - 1) + x^(2 * x) * 2 * log(x)");
+    EXPECT_EQ(s, "2 * x * x^(2 * x - 1) + x^(2 * x) * log(x) * 2");
   }
 
   TEST_F(MathUtilTest, differentiateTestPow4) {
@@ -441,14 +446,11 @@ namespace {
     EXPECT_EQ(s, "piecewise(1, false, 3 * x^2, true, 2 * x * cos(x^2))");
   }
 
-  /*
   TEST_F(MathUtilTest, differentiateTestFactorial) {
     ASTNode* ast = SBML_parseFormula("factorial(x)");
     ASTNode* diff = MathUtil::simplify(MathUtil::differentiate(ast, "x"));
     std::string s = SBML_formulaToL3String(diff);
-    std::cout << s << std::endl;
-    EXPECT_EQ(1, 1);
+    EXPECT_EQ(s, "(1 / 2) * (2 * pi * x)^(1 / 2 - 1) * (2 * pi) * (x / exponentiale)^x + sqrt(2 * pi * x) * (x * (x / exponentiale)^(x - 1) * (1 / exponentiale) + (x / exponentiale)^x * ln(x / exponentiale))");
   }
-   */
 
 } // namespace

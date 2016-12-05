@@ -47,6 +47,7 @@ double MathUtil::fabs(double x) {
 }
 
 ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
+  // We do not expect that *ast is a binary tree, so we will convert it at first.
   ASTNode *binaryTree = ASTNodeUtil::reduceToBinary(ast);
   ASTNode *differentiatedRoot = new ASTNode();
 
@@ -101,7 +102,7 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       left->addChild(lr);
       ASTNode *right = new ASTNode(AST_FUNCTION_POWER);
       right->addChild(binaryTree->getRightChild()->deepCopy());
-      ASTNode *rr = new ASTNode(AST_INTEGER);
+      ASTNode *rr = new ASTNode();
       rr->setValue(2);
       right->addChild(rr);
       differentiatedRoot->addChild(left);
@@ -112,34 +113,31 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
     case AST_POWER: {
       /* d{u^v}/dx = v * u^(v-1) * du/dx + u^v * ln(u) * dv/dx */
       differentiatedRoot->setType(AST_PLUS);
-      // LHS
-      ASTNode *left = new ASTNode(AST_TIMES);
-      ASTNode *minus = new ASTNode(AST_MINUS);
-      ASTNode *one = new ASTNode(AST_INTEGER);
+      // Left multiply
+      ASTNode *left = new ASTNode(AST_TIMES);  // v * u^(v-1) * du/dx
+      ASTNode *minus = new ASTNode(AST_MINUS); // (v-1)
+      ASTNode *one = new ASTNode();
       one->setValue(1);
       minus->addChild(binaryTree->getRightChild()->deepCopy()); // add v
       minus->addChild(one);
-      ASTNode *power = new ASTNode(AST_POWER);
+      ASTNode *power = new ASTNode(AST_POWER); // u^(v-1)
       power->addChild(binaryTree->getLeftChild()->deepCopy()); // add u
       power->addChild(minus);
-      ASTNode *ll = new ASTNode(AST_TIMES);
-      ll->addChild(binaryTree->getRightChild()->deepCopy());  // add v
-      ll->addChild(power);
-      ASTNode *lr = differentiate(binaryTree->getLeftChild(), target); // du/dx
-      left->addChild(ll);
-      left->addChild(lr);
-      // RHS
+      ASTNode *dudx = differentiate(binaryTree->getLeftChild(), target); // du/dx
+      left->addChild(binaryTree->getRightChild()->deepCopy()); // add v
+      left->addChild(power);
+      left->addChild(dudx);
+      // Right multiply
       ASTNode *right = new ASTNode(AST_TIMES);
-      ASTNode *rl = new ASTNode(AST_POWER);
-      rl->addChild(binaryTree->getLeftChild()->deepCopy());  // add u
-      rl->addChild(binaryTree->getRightChild()->deepCopy()); // add v
-      ASTNode *rr = new ASTNode(AST_TIMES);
+      ASTNode *rpower = new ASTNode(AST_POWER);    // u^v
+      rpower->addChild(binaryTree->getLeftChild()->deepCopy());  // add u
+      rpower->addChild(binaryTree->getRightChild()->deepCopy()); // add v
       ASTNode *ln = new ASTNode(AST_FUNCTION_LN);
       ln->addChild(binaryTree->getLeftChild()->deepCopy());  // add u
-      rr->addChild(ln);
-      rr->addChild(differentiate(binaryTree->getRightChild()->deepCopy(), target)); // add dv/dx
-      right->addChild(rl);
-      right->addChild(rr);
+      ASTNode *dvdx = differentiate(binaryTree->getRightChild()->deepCopy(), target); // dv/dx
+      right->addChild(rpower);
+      right->addChild(ln);
+      right->addChild(dvdx);
       // add left and right
       differentiatedRoot->addChild(left);
       differentiatedRoot->addChild(right);
@@ -174,7 +172,7 @@ ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
       /* d{cos(u)}/dx = -1 * du/dx * sin(u) */
       differentiatedRoot->setType(AST_TIMES);
       ASTNode *left = new ASTNode(AST_TIMES);
-      ASTNode *ll = new ASTNode(AST_INTEGER);
+      ASTNode *ll = new ASTNode();
       ll->setValue(-1);
       left->addChild(ll);
       left->addChild(differentiate(binaryTree->getLeftChild(), target));
@@ -770,48 +768,49 @@ bool MathUtil::containsTarget(const ASTNode *ast, std::string target)
 }
 
 ASTNode* MathUtil::simplify(const ASTNode *ast) {
-  ASTNodeType_t type = ast->getType();
+  ASTNode *binaryTree = ASTNodeUtil::reduceToBinary(ast);
+  ASTNodeType_t type = binaryTree->getType();
   ASTNode *left, *right, *simplifiedRoot, *tmpl, *tmpr;
 
-  if ((!ast->isOperator())
-    && (ast->getType() != AST_FUNCTION_POWER)
-    && (ast->getType() != AST_POWER)
-    && (ast->getType() != AST_FUNCTION_LN)
-    && (ast->getType() != AST_FUNCTION_PIECEWISE)
+  if ((!binaryTree->isOperator())
+    && (binaryTree->getType() != AST_FUNCTION_POWER)
+    && (binaryTree->getType() != AST_POWER)
+    && (binaryTree->getType() != AST_FUNCTION_LN)
+    && (binaryTree->getType() != AST_FUNCTION_PIECEWISE)
     ) {
-    return ast->deepCopy();
+    return binaryTree->deepCopy();
   }
 
   // simplify only even index for AST_FUNCTION_PIECEWISE
   // AST_FUNCTION_PIECEWISE is not binay tree.
-  if (ast->getType() == AST_FUNCTION_PIECEWISE) {
+  if (binaryTree->getType() == AST_FUNCTION_PIECEWISE) {
     simplifiedRoot = new ASTNode(AST_FUNCTION_PIECEWISE);
-    for (auto i = 0; i < ast->getNumChildren(); i++) {
+    for (auto i = 0; i < binaryTree->getNumChildren(); i++) {
       if (i % 2 == 0) {
-        simplifiedRoot->addChild(simplify(ast->getChild(i)));
+        simplifiedRoot->addChild(simplify(binaryTree->getChild(i)));
       } else {
-        simplifiedRoot->addChild(ast->getChild(i)->deepCopy());
+        simplifiedRoot->addChild(binaryTree->getChild(i)->deepCopy());
       }
     }
     return simplifiedRoot;
   }
 
-  left  = simplify(ast->getLeftChild());
+  left  = simplify(binaryTree->getLeftChild());
   auto left_val = left->getValue();
 
   // AST_FUNCTION_LN only has 1 argument
-  if (ast->getType() == AST_FUNCTION_LN) {
-    if (ast->getLeftChild()->getType() == AST_CONSTANT_E) {
+  if (binaryTree->getType() == AST_FUNCTION_LN) {
+    if (binaryTree->getLeftChild()->getType() == AST_CONSTANT_E) {
       simplifiedRoot = new ASTNode();
       simplifiedRoot->setValue(1);
       return simplifiedRoot;
     } else {
-      return ast->deepCopy();
+      return binaryTree->deepCopy();
     }
   }
 
   // take care on 2nd argument
-  right = simplify(ast->getRightChild());
+  right = simplify(binaryTree->getRightChild());
   auto right_val = right->getValue();
 
   switch (type) {
@@ -877,7 +876,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
         }
       }
       break;
-    case AST_TIMES:
+    case AST_TIMES: {
       if (left->isNumber()) {
         left_val = left->getValue();
         if (left_val == 0.0) {
@@ -887,9 +886,9 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
         } else if (left_val == 1.0) {
           return right->deepCopy();
         } else if (right->isNumber()) {
-          right_val   = right->getValue();
+          right_val = right->getValue();
           simplifiedRoot = new ASTNode();
-          simplifiedRoot->setValue(left_val*right_val);
+          simplifiedRoot->setValue(left_val * right_val);
           return simplifiedRoot;
         }
       }
@@ -901,7 +900,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
           return simplifiedRoot;
         } else if (right_val == 1.0) {
           return left->deepCopy();
-        } else if (left->getType() != AST_TIMES){   // left is not AST_TIMES, right is an integer. (x * 2) => (2 * x)
+        } else if (left->getType() != AST_TIMES) {   // left is not AST_TIMES, right is an integer. (x * 2) => (2 * x)
           simplifiedRoot = new ASTNode(AST_TIMES);
           simplifiedRoot->addChild(right->deepCopy());
           simplifiedRoot->addChild(left->deepCopy());
@@ -934,6 +933,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
         }
       }
       break; // can't simplify
+    }
     case AST_DIVIDE:
       if (left->isNumber()) {
         left_val = left->getValue();
@@ -979,7 +979,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
         simplifiedRoot = new ASTNode(AST_POWER);
         simplifiedRoot->addChild(left->getLeftChild()->deepCopy());
         tmpr = new ASTNode(AST_TIMES);
-        tmpr->addChild(left->getRightChild());
+        tmpr->addChild(left->getRightChild()->deepCopy());
         tmpr->addChild(right->deepCopy());
         simplifiedRoot->addChild(tmpr);
         return simplify(simplifiedRoot);
@@ -995,7 +995,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
       break;
   }
   simplifiedRoot = new ASTNode(type);
-  simplifiedRoot->addChild(left);
-  simplifiedRoot->addChild(right);
+  simplifiedRoot->addChild(left->deepCopy());
+  simplifiedRoot->addChild(right->deepCopy());
   return simplifiedRoot;
 }
