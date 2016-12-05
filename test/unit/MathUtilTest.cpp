@@ -453,4 +453,25 @@ namespace {
     EXPECT_EQ(s, "(1 / 2) * (2 * pi * x)^(1 / 2 - 1) * (2 * pi) * (x / exponentiale)^x + sqrt(2 * pi * x) * (x * (x / exponentiale)^(x - 1) * (1 / exponentiale) + (x / exponentiale)^x * ln(x / exponentiale))");
   }
 
+  TEST_F(MathUtilTest, taylorSeriesTest1) {
+    ASTNode* ast = SBML_parseFormula("sin(x)");
+    ASTNode* taylorSeries = MathUtil::simplify(MathUtil::taylorSeries(ast, "x", 0, 5));
+    std::string s = SBML_formulaToString(taylorSeries);
+    EXPECT_EQ(s, "x + -1 / 6 * x^3 + 1 / 120 * x^5");
+  }
+
+  TEST_F(MathUtilTest, taylorSeriesTest2) {
+    ASTNode* ast = SBML_parseL3Formula("exponentiale^x");
+    ASTNode* taylorSeries = MathUtil::simplify(MathUtil::taylorSeries(ast, "x", 0, 4));
+    std::string s = SBML_formulaToString(taylorSeries);
+    EXPECT_EQ(s, "x + 1 + 1 / 2 * x^2 + 1 / 6 * x^3 + 1 / 24 * x^4");
+  }
+
+  TEST_F(MathUtilTest, taylorSeriesTest3) {
+    ASTNode* ast = SBML_parseL3Formula("1/(1-x)");
+    ASTNode* taylorSeries = MathUtil::simplify(MathUtil::taylorSeries(ast, "x", 0, 5));
+    std::string s = SBML_formulaToString(taylorSeries);
+    EXPECT_EQ(s, "x + 1 + x^2 + x^3 + x^4 + x^5");
+  }
+
 } // namespace

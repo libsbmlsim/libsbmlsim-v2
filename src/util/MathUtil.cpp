@@ -777,7 +777,10 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
     && (binaryTree->getType() != AST_POWER)
     && (binaryTree->getType() != AST_FUNCTION_LN)
     && (binaryTree->getType() != AST_FUNCTION_PIECEWISE)
-    ) {
+    && (binaryTree->getType() != AST_FUNCTION_SIN)
+    && (binaryTree->getType() != AST_FUNCTION_COS)
+    && (binaryTree->getType() != AST_FUNCTION_TAN)
+      ) {
     return binaryTree->deepCopy();
   }
 
@@ -798,7 +801,7 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
   left  = simplify(binaryTree->getLeftChild());
   auto left_val = left->getValue();
 
-  // AST_FUNCTION_LN only has 1 argument
+  // AST_FUNCTION_{LN,SIN,COS,TAN} only has 1 argument
   if (binaryTree->getType() == AST_FUNCTION_LN) {
     if (binaryTree->getLeftChild()->getType() == AST_CONSTANT_E) {
       simplifiedRoot = new ASTNode();
@@ -807,6 +810,33 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
     } else {
       return binaryTree->deepCopy();
     }
+  } else if (binaryTree->getType() == AST_FUNCTION_SIN) {
+    if (binaryTree->getLeftChild()->isNumber()) {
+      if (binaryTree->getLeftChild()->getValue() == 0) {
+        simplifiedRoot = new ASTNode();
+        simplifiedRoot->setValue(0);
+        return simplifiedRoot;
+      }
+    }
+    return binaryTree->deepCopy();
+  } else if (binaryTree->getType() == AST_FUNCTION_COS) {
+    if (binaryTree->getLeftChild()->isNumber()) {
+      if (binaryTree->getLeftChild()->getValue() == 0) {
+        simplifiedRoot = new ASTNode();
+        simplifiedRoot->setValue(1);
+        return simplifiedRoot;
+      }
+    }
+    return binaryTree->deepCopy();
+  } else if (binaryTree->getType() == AST_FUNCTION_TAN) {
+    if (binaryTree->getLeftChild()->isNumber()) {
+      if (binaryTree->getLeftChild()->getValue() == 0) {
+        simplifiedRoot = new ASTNode();
+        simplifiedRoot->setValue(0);
+        return simplifiedRoot;
+      }
+    }
+    return binaryTree->deepCopy();
   }
 
   // take care on 2nd argument
@@ -965,6 +995,18 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
       break; // can't simplify
     case AST_POWER:
     case AST_FUNCTION_POWER:
+      if (left->isNumber()) {
+        left_val = left->getValue();
+        if (left_val == 0.0) {
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(0);
+          return simplifiedRoot;
+        } else if (left_val == 1.0) {
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(1);
+          return simplifiedRoot;
+        }
+      }
       if (right->isNumber()) {
         right_val = right->getValue();
         if (right_val == 0.0) {
@@ -999,3 +1041,56 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
   simplifiedRoot->addChild(right->deepCopy());
   return simplifiedRoot;
 }
+
+ASTNode* MathUtil::taylorSeries(const ASTNode *ast, std::string target, double point, int order) {
+  /**
+   * f(x) = \sum_{n=0}^{\infty}{ f^n(a)/(n!) * (x - a)^n }
+   * where f^0 = f, (x - a)^0 = 1, 0! = 1.
+   */
+  ASTNode *taylorSeriesRoot = new ASTNode();
+  taylorSeriesRoot->setType(AST_PLUS);
+  ASTNode *term = ast->deepCopy();
+  ASTNode *nodeA = new ASTNode();
+  nodeA->setValue(point);
+  // generate f^0(a)
+  ASTNode *substitute = term->deepCopy();
+  substitute->replaceArgument(target, nodeA);
+  taylorSeriesRoot->addChild(substitute);
+  for (int n = 1; n < order+1; n++) {
+    // f'
+    ASTNode *dfdx = simplify(differentiate(term, target));
+    substitute = dfdx->deepCopy();
+    // f'(a)
+    substitute->replaceArgument(target, nodeA->deepCopy());
+    // n!
+    ASTNode *factorial = new ASTNode();
+    factorial->setValue(MathUtil::factorial(n));
+    // f'/n!
+    ASTNode *divide = new ASTNode(AST_DIVIDE);
+    divide->addChild(substitute);
+    divide->addChild(factorial);
+    // (x - a)
+    ASTNode *minus = new ASTNode(AST_MINUS);
+    ASTNode *nodeX = new ASTNode(AST_NAME);
+    nodeX->setName(target.c_str());
+    minus->addChild(nodeX);
+    minus->addChild(nodeA->deepCopy());
+    // (x - a)^n
+    ASTNode *power = new ASTNode(AST_POWER);
+    ASTNode *nodeN = new ASTNode();
+    nodeN->setValue(n);
+    power->addChild(minus);
+    power->addChild(nodeN->deepCopy());
+    // combine
+    ASTNode *times = new ASTNode(AST_TIMES);
+    times->addChild(divide);
+    times->addChild(power);
+    // add to sigma
+    taylorSeriesRoot->addChild(times);
+    // prepare for next iteration
+    delete(term);
+    term = dfdx->deepCopy();
+  }
+  return taylorSeriesRoot;
+}
+

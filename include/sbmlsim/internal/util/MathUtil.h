@@ -15,6 +15,7 @@ class MathUtil {
   static bool containsTarget(const ASTNode *ast, std::string target);
   static ASTNode* simplify(const ASTNode *ast);
   static ASTNode* differentiate(const ASTNode *ast, std::string target);
+  static ASTNode* taylorSeries(const ASTNode *ast, std::string target, double point, int order);
  private:
   MathUtil() {}
   ~MathUtil() {}
