@@ -1094,3 +1094,18 @@ ASTNode* MathUtil::taylorSeries(const ASTNode *ast, std::string target, double p
   return taylorSeriesRoot;
 }
 
+bool MathUtil::isEqualTree(const ASTNode *ast1, const ASTNode *ast2) {
+  // handle two ASTNodes with nullptr as equal
+  if (ast1 ==  ast2) {
+    return true;
+  }
+  if (ast1 == nullptr || ast2 == nullptr) {
+    return false;
+  }
+  ASTNode* root1 = ASTNodeUtil::reduceToBinary(ast1);
+  ASTNode* root2 = ASTNodeUtil::reduceToBinary(ast2);
+  return ( ASTNodeUtil::isEqual(ast1, ast2) &&
+      ( (isEqualTree(root1->getLeftChild(), root2->getLeftChild()) && isEqualTree(root1->getRightChild(), root2->getRightChild())) ||
+        (isEqualTree(root1->getLeftChild(), root2->getRightChild()) && isEqualTree(root1->getRightChild(), root2->getLeftChild())) )
+  );
+}

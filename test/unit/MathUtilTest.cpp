@@ -474,4 +474,40 @@ namespace {
     EXPECT_EQ(s, "x + 1 + x^2 + x^3 + x^4 + x^5");
   }
 
+  TEST_F(MathUtilTest, isEqualTreeTrue1) {
+    ASTNode* ast1 = SBML_parseFormula("a*b");
+    ASTNode* ast2 = SBML_parseFormula("a*b");
+    EXPECT_TRUE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
+  TEST_F(MathUtilTest, isEqualTreeTrue2) {
+    ASTNode* ast1 = SBML_parseFormula("a*b");
+    ASTNode* ast2 = SBML_parseFormula("b*a");
+    EXPECT_TRUE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
+  TEST_F(MathUtilTest, isEqualTreeTrue3) {
+    ASTNode* ast1 = SBML_parseFormula("sin(2*x)");
+    ASTNode* ast2 = SBML_parseFormula("sin(x*2)");
+    EXPECT_TRUE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
+  TEST_F(MathUtilTest, isEqualTreeFalse1) {
+    ASTNode* ast1 = SBML_parseFormula("a*b");
+    ASTNode* ast2 = SBML_parseFormula("a*c");
+    EXPECT_FALSE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
+  TEST_F(MathUtilTest, isEqualTreeFalse2) {
+    ASTNode* ast1 = SBML_parseFormula("sin(a*b)");
+    ASTNode* ast2 = SBML_parseFormula("sin(a*c)");
+    EXPECT_FALSE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
+  TEST_F(MathUtilTest, isEqualTreeFalse3) {
+    ASTNode* ast1 = SBML_parseFormula("sin(a*b)");
+    ASTNode* ast2 = SBML_parseFormula("cos(a*b)");
+    EXPECT_FALSE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
 } // namespace
