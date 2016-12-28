@@ -1,6 +1,7 @@
 #include "sbmlsim/internal/util/MathUtil.h"
 #include <cmath>
 #include <sbmlsim/internal/util/ASTNodeUtil.h>
+#include <boost/math/common_factor_rt.hpp>
 
 const unsigned long long FACTORIAL_TABLE[] = { // size 20
     1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800,
@@ -45,6 +46,11 @@ double MathUtil::exp(double x) {
 double MathUtil::fabs(double x) {
   return ::fabs(x);
 }
+
+bool MathUtil::isLong(double f) {
+  return MathUtil::floor(f) == f;
+}
+
 
 ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
   // We do not expect that *ast is a binary tree, so we will convert it at first.
@@ -1033,6 +1039,383 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
         return simplifiedRoot;
       }
       break; // can't simplify
+    default:
+      break;
+  }
+  simplifiedRoot = new ASTNode(type);
+  simplifiedRoot->addChild(left->deepCopy());
+  simplifiedRoot->addChild(right->deepCopy());
+  return simplifiedRoot;
+}
+
+ASTNode* MathUtil::simplifyNew(const ASTNode *ast) {
+  ASTNode *postRuleOne = MathUtil::simplifyRuleOne(ast);
+  ASTNode *postRuleTwo = MathUtil::simplifyRuleTwo(postRuleOne);
+  std::cout << std::endl << "GCD(6, 15) = " << boost::math::gcd(6, 15) << std::endl;
+  return postRuleTwo;
+}
+
+ASTNode* MathUtil::simplifyRuleOne(const ASTNode *ast) {
+  ASTNode *left, *right, *simplifiedRoot;
+  std::vector<ASTNode*> children;
+
+  if ((!ast->isOperator())
+      //&& (ast->getType() != AST_FUNCTION_POWER)
+      //&& (ast->getType() != AST_POWER)
+      //&& (ast->getType() != AST_FUNCTION_LN)
+      && (ast->getType() != AST_FUNCTION_PIECEWISE)
+      //&& (ast->getType() != AST_FUNCTION_SIN)
+      //&& (ast->getType() != AST_FUNCTION_COS)
+      //&& (ast->getType() != AST_FUNCTION_TAN)
+      ) {
+    return ast->deepCopy();
+  }
+
+  // simplify only even index for AST_FUNCTION_PIECEWISE
+  // AST_FUNCTION_PIECEWISE is not binay tree.
+  if (ast->getType() == AST_FUNCTION_PIECEWISE) {
+    simplifiedRoot = new ASTNode(AST_FUNCTION_PIECEWISE);
+    for (auto i = 0; i < ast->getNumChildren(); i++) {
+      if (i % 2 == 0) {
+        simplifiedRoot->addChild(simplifyRuleOne(ast->getChild(i)));
+      } else {
+        simplifiedRoot->addChild(ast->getChild(i)->deepCopy());
+      }
+    }
+    return simplifiedRoot;
+  }
+
+  for (auto i = 0; i < ast->getNumChildren(); i++) {
+    children.push_back(simplifyRuleOne(ast->getChild(i)));
+  }
+  left  = children[0];
+  right = children[1];
+
+  ASTNodeType_t type = ast->getType();
+  switch (type) {
+    case AST_PLUS: {
+      // a + (b + c) == (a + b) + c -> a + b + c
+      simplifiedRoot = new ASTNode();
+      simplifiedRoot->setType(AST_PLUS);
+      for (auto i = 0; i < children.size(); i++) {
+        ASTNode *child = children[i];
+        if (child->getType() == AST_PLUS) {
+          for (auto j = 0; j < child->getNumChildren(); j++) {
+            simplifiedRoot->addChild(child->getChild(j)->deepCopy());
+          }
+        } else {
+          simplifiedRoot->addChild(child->deepCopy());
+        }
+      }
+      return simplifiedRoot;
+    }
+    case AST_TIMES: {
+      // a * (b * c) == (a * b) * c -> a * b * c
+      simplifiedRoot = new ASTNode();
+      simplifiedRoot->setType(AST_TIMES);
+      for (auto i = 0; i < children.size(); i++) {
+        ASTNode *child = children[i];
+        if (child->getType() == AST_TIMES) {
+          for (auto j = 0; j < child->getNumChildren(); j++) {
+            simplifiedRoot->addChild(child->getChild(j)->deepCopy());
+          }
+        } else {
+          simplifiedRoot->addChild(child->deepCopy());
+        }
+      }
+      return simplifiedRoot;
+    }
+    case AST_MINUS: {
+      // AST_MINUS tree is always a binary tree.
+      if (right->isNumber()) {
+        // a - b -> a + (-1*b) (if b is a constant)
+        simplifiedRoot = new ASTNode();
+        simplifiedRoot->setType(AST_PLUS);
+        auto right_val = right->getValue();
+        right_val *= -1;
+        ASTNode *minusNode = new ASTNode();
+        minusNode->setValue(right_val);
+        simplifiedRoot->addChild(left->deepCopy());
+        simplifiedRoot->addChild(minusNode);
+      } else {
+        // a - f(x) -> a + (-1*f(x)) (if f(x) is a term)
+        simplifiedRoot = new ASTNode();
+        simplifiedRoot->setType(AST_PLUS);
+        ASTNode *times = new ASTNode();
+        times->setType(AST_TIMES);
+        ASTNode *minusone = new ASTNode();
+        minusone->setValue(-1);
+        times->addChild(minusone);
+        times->addChild(ast->getRightChild()->deepCopy());
+        simplifiedRoot->addChild(ast->getLeftChild()->deepCopy());
+        simplifiedRoot->addChild(times);
+      }
+      return simplifyRuleOne(simplifiedRoot);
+    }
+    case AST_DIVIDE: {
+      // AST_DIVIDE tree is always a binary tree.
+      // x^2 / y^2 -> x^2 * y^(-2)
+      simplifiedRoot = new ASTNode();
+      simplifiedRoot->setType(AST_TIMES);
+      simplifiedRoot->addChild(left->deepCopy());
+      ASTNode *power = new ASTNode();
+      power->setType(AST_POWER);
+      ASTNodeType_t rightType = right->getType();
+      if (rightType == AST_POWER || rightType == AST_FUNCTION_POWER) {
+        if (right->getRightChild()->isNumber()) {
+          auto degree = right->getRightChild()->getValue();
+          degree *= -1;
+          ASTNode *minusDegree = new ASTNode();
+          minusDegree->setValue(degree);
+          power->addChild(right->getLeftChild()->deepCopy());
+          power->addChild(minusDegree);
+        }
+      } else {
+        power->addChild(right->deepCopy());
+        ASTNode *minusOne = new ASTNode();
+        minusOne->setValue(-1);
+        power->addChild(minusOne);
+      }
+      simplifiedRoot->addChild(power);
+      return simplifiedRoot;
+    }
+    default:
+      break;
+  }
+  // power
+  // exponent, base e
+  // natural logarithm
+  // sine
+  // cosine
+  // tangent
+  // hyperbolic sine
+  // hyperbolic cosine
+  // hyperbolic tangent
+  // inverse
+  simplifiedRoot = new ASTNode(type);
+  simplifiedRoot->addChild(left);
+  simplifiedRoot->addChild(right);
+  return simplifiedRoot;
+}
+
+ASTNode* MathUtil::simplifyRuleTwo(const ASTNode *ast) {
+  ASTNode *left, *right, *simplifiedRoot;
+  std::vector<ASTNode*> children;
+
+  if ((!ast->isOperator())
+      && (ast->getType() != AST_FUNCTION_POWER)
+      && (ast->getType() != AST_POWER)
+      && (ast->getType() != AST_FUNCTION_LN)
+      && (ast->getType() != AST_FUNCTION_PIECEWISE)
+      && (ast->getType() != AST_FUNCTION_SIN)
+      && (ast->getType() != AST_FUNCTION_COS)
+      && (ast->getType() != AST_FUNCTION_TAN)
+      ) {
+    return ast->deepCopy();
+  }
+
+  // simplify only even index for AST_FUNCTION_PIECEWISE
+  // AST_FUNCTION_PIECEWISE is not binay tree.
+  if (ast->getType() == AST_FUNCTION_PIECEWISE) {
+    simplifiedRoot = new ASTNode(AST_FUNCTION_PIECEWISE);
+    for (auto i = 0; i < ast->getNumChildren(); i++) {
+      if (i % 2 == 0) {
+        simplifiedRoot->addChild(simplifyRuleTwo(ast->getChild(i)));
+      } else {
+        simplifiedRoot->addChild(ast->getChild(i)->deepCopy());
+      }
+    }
+    return simplifiedRoot;
+  }
+
+  for (auto i = 0; i < ast->getNumChildren(); i++) {
+    children.push_back(simplifyRuleTwo(ast->getChild(i)));
+  }
+  left  = children[0];
+  right = children[1];
+  ASTNodeType_t type = ast->getType();
+
+  switch (type) {
+    case AST_PLUS: {
+      auto count = 0;
+      auto countTimes = 0;
+      double sum = 0.0;
+      for (auto i = 0; i < children.size(); i++) {
+        ASTNode *child = children[i];
+        if (child->isNumber()) {
+          sum += child->getValue();
+          count++;
+        } else if (child->getType() == AST_TIMES && child->getLeftChild()->isNumber()) {
+          countTimes++;
+        }
+      }
+      if (countTimes == children.size()) { // (a*f(x) + b*f(x)) -> (a+b)*f(x)
+        bool isAllSameTree = true;
+        ASTNode *compTree = children[0]->getRightChild();
+        for (auto i = 1; i < children.size(); i++) {
+          ASTNode *rightChildOfTimes = children[i]->getRightChild();
+          if (!MathUtil::isEqualTree(compTree, rightChildOfTimes)) {
+            isAllSameTree = false;
+          }
+        }
+        if (isAllSameTree) {
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setType(AST_TIMES);
+          ASTNode *sumNode = new ASTNode();
+          double leftSum = 0.0;
+          for (auto i = 0; i < children.size(); i++) {
+            leftSum += children[i]->getLeftChild()->getValue();
+          }
+          sumNode->setValue(leftSum);
+          simplifiedRoot->addChild(sumNode);
+          simplifiedRoot->addChild(compTree->deepCopy());
+          return simplifyRuleTwo(simplifiedRoot);
+        }
+      }
+      if (count == children.size()) { // (1 + 2 + 3) -> 6
+        simplifiedRoot = new ASTNode();
+        simplifiedRoot->setValue(sum);
+        return simplifiedRoot;
+      } else {  // (x + y + 1 + 2) -> x + y + 3
+        simplifiedRoot = new ASTNode(AST_PLUS);
+        for (auto i = 0; i < children.size(); i++) {
+          ASTNode *child = children[i];
+          if (!child->isNumber()) {
+            simplifiedRoot->addChild(child->deepCopy());
+          }
+        }
+        if (sum != 0.0) {
+          ASTNode *sumNode = new ASTNode();
+          sumNode->setValue(sum);
+          simplifiedRoot->addChild(sumNode);
+        }
+      }
+      return simplifiedRoot;
+    }
+    case AST_TIMES: {
+      auto count = 0;
+      auto countRational = 0;
+      double product = 1.0;
+      long productNumerator = 1;
+      long productDenominator = 1;
+      // for integer and real numbers
+      for (auto i = 0; i < children.size(); i++) {
+        ASTNode *child = children[i];
+        if (child->isNumber() && !child->isRational()) {
+          double val;
+          val = child->getValue();
+          if (val == 0.0) {  // x * 0 -> 0
+            simplifiedRoot = new ASTNode();
+            simplifiedRoot->setValue(0.0);
+            return simplifiedRoot;
+          }
+          product *= val;
+          count++;
+        }
+      }
+      // for rational numbers
+      for (auto i = 0; i < children.size(); i++) {
+        ASTNode *child = children[i];
+        if (child->isRational()) {
+          auto nval = child->getNumerator();
+          auto dval = child->getDenominator();
+          if (nval == 0) {  // x * 0 -> 0
+            simplifiedRoot = new ASTNode();
+            simplifiedRoot->setValue(0.0);
+            return simplifiedRoot;
+          }
+          productNumerator *= nval;
+          productDenominator *= dval;
+          countRational++;
+        }
+      }
+      if (count == children.size()) { // (1 * 2 * 3) -> 6
+        simplifiedRoot = new ASTNode();
+        simplifiedRoot->setValue(product);
+      } else {  // (x * y * 1 * 2) -> x * y * 2
+        simplifiedRoot = new ASTNode(AST_TIMES);
+        if (product != 1.0) {
+          ASTNode *sumNode = new ASTNode();
+          sumNode->setValue(product);
+          simplifiedRoot->addChild(sumNode);
+        }
+        for (auto i = 0; i < children.size(); i++) {
+          ASTNode *child = children[i];
+          if (!child->isNumber()) {
+            simplifiedRoot->addChild(child->deepCopy());
+          }
+        }
+      }
+      return ASTNodeUtil::reduceToBinary(simplifiedRoot);
+    }
+    case AST_POWER:
+    case AST_FUNCTION_POWER: {
+      // AST_POWER and AST_FUNCTION_POWER tree is always a binary tree.
+      if (left->isNumber()) {
+        auto left_val = left->getValue();
+        if (left_val == 0.0) {          // (0^n) -> 0
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(0);
+          return simplifiedRoot;
+        } else if (left_val == 1.0) {   // (1^n) -> 1
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(1);
+          return simplifiedRoot;
+        } else if (right->isNumber()) { // (2 ^ 3) -> 8
+          if (right->getValue() > 0) {  // (2 ^ 3)
+            auto right_val = right->getValue();
+            simplifiedRoot = new ASTNode();
+            simplifiedRoot->setValue(pow(left_val, right_val));
+            return simplifiedRoot;
+          } else if (right->getValue() == -1 && MathUtil::isLong(left_val)){ // (2 ^ -1)
+            simplifiedRoot = new ASTNode();
+            simplifiedRoot->setType(AST_RATIONAL);
+            simplifiedRoot->setValue((long)1, (long)left_val); // sets (numerator, denominator)
+            return simplifiedRoot;
+          }
+        }
+      }
+      if (right->isNumber()) {
+        auto right_val = right->getValue();
+        if (right_val == 0.0) {         // (x ^ 0) -> 1
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(1);
+          return simplifiedRoot;
+        } else if (right_val == 1.0) {  // (x ^ 1) -> x
+          return left->deepCopy();
+        }
+      }
+      if (left->getType() == AST_FUNCTION_POWER || left->getType() == AST_POWER) {
+        if (left->getLeftChild()->isNumber() && right->isNumber()) {
+          // pow(pow(2, x), 3) => pow(8, x)
+          auto base = left->getLeftChild()->getValue();
+          auto exponent = right->getValue();
+          auto val = pow(base, exponent);
+          ASTNode *baseNode = new ASTNode();
+          baseNode->setValue(val);
+          simplifiedRoot = new ASTNode(AST_POWER);
+          simplifiedRoot->addChild(baseNode);
+          simplifiedRoot->addChild(left->getRightChild()->deepCopy());
+          return simplifyRuleTwo(simplifiedRoot);
+        } else {
+          // pow(pow(x, 2), 3) => pow(x, 2*3)
+          simplifiedRoot = new ASTNode(AST_POWER);
+          simplifiedRoot->addChild(left->getLeftChild()->deepCopy());
+          ASTNode *tmpr = new ASTNode(AST_TIMES);
+          tmpr->addChild(left->getRightChild()->deepCopy());
+          tmpr->addChild(right->deepCopy());
+          simplifiedRoot->addChild(tmpr);
+          return simplifyRuleTwo(simplifiedRoot);
+        }
+      }
+      if (type == AST_FUNCTION_POWER) { // convert pow(x, y) to x ^ y
+        simplifiedRoot = new ASTNode(AST_POWER);
+        simplifiedRoot->addChild(left->deepCopy());
+        simplifiedRoot->addChild(right->deepCopy());
+        return simplifiedRoot;
+      }
+      break; // can't simplify
+    }
     default:
       break;
   }

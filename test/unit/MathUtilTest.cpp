@@ -7,6 +7,153 @@ namespace {
 
   class MathUtilTest : public ::testing::Test{};
 
+  TEST_F(MathUtilTest, simplifyRuleOneTest1) {
+    ASTNode* ast = SBML_parseFormula("((x + y) + 1) + 2");
+    ASTNode* simp = MathUtil::simplifyRuleOne(ast);
+    int num = simp->getNumChildren();
+    EXPECT_EQ(4, num);
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleOneTest2) {
+    ASTNode* ast = SBML_parseFormula("((1 * 2) * 3) * 4");
+    ASTNode* simp = MathUtil::simplifyRuleOne(ast);
+    int num = simp->getNumChildren();
+    EXPECT_EQ(4, num);
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleOneTest3) {
+    ASTNode* ast = SBML_parseFormula("((x + y) + 1) + 2");
+    ASTNode* simp = MathUtil::simplifyRuleOne(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "x + y + 1 + 2");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleOneTest4) {
+    ASTNode* ast = SBML_parseFormula("((1 * 2) * 3) * 4");
+    ASTNode* simp = MathUtil::simplifyRuleOne(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "1 * 2 * 3 * 4");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleOneTest5) {
+    ASTNode* ast = SBML_parseFormula("a - 5");
+    ASTNode* simp = MathUtil::simplifyRuleOne(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "a + -5");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleOneTest6) {
+    ASTNode* ast = SBML_parseFormula("1 / y");
+    ASTNode* simp = MathUtil::simplifyRuleOne(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "1 * y^-1");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleOneTest7) {
+    ASTNode* ast = SBML_parseFormula("x^2 / y^2");
+    ASTNode* simp = MathUtil::simplifyRuleOne(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "x^2 * y^-2");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest1) {
+    ASTNode* ast = SBML_parseFormula("(1 + 2) + 3");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "6");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest2) {
+    ASTNode* ast = SBML_parseFormula("1 + x + 2 + y");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "x + y + 3");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest3) {
+    ASTNode* ast = SBML_parseFormula("1 * 2 * 3");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "6");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest4) {
+    ASTNode* ast = SBML_parseFormula("2 * x * 3 * y * 1");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "6 * x * y");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest5) {
+    ASTNode* ast = SBML_parseFormula("0 ^ 3");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "0");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest6) {
+    ASTNode* ast = SBML_parseFormula("1 ^ (-3)");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "1");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest7) {
+    ASTNode* ast = SBML_parseFormula("(x^2 + y^2)^0");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "1");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest8) {
+    ASTNode* ast = SBML_parseFormula("(2 * x * 3 * y * 1)^1");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "6 * x * y");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest9) {
+    ASTNode* ast = SBML_parseFormula("pow(2, 3)");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "8");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest10) {
+    ASTNode* ast = SBML_parseFormula("pow(pow(x, 2), 3)");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "x^6");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest11) {
+    ASTNode* ast = SBML_parseFormula("pow(pow(2, x), 3)");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "8^x");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest12) {
+    ASTNode* ast = SBML_parseFormula("3 * x^p + 2 * x^p");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "5 * x^p");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest13) {
+    ASTNode* ast = SBML_parseFormula("3 * x^p - 2 * x^p");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "x^p");
+  }
+
+  TEST_F(MathUtilTest, simplifyRuleTwoTest14) {
+    ASTNode* ast = SBML_parseFormula("2 * x^p - x^p");
+    ASTNode* simp = MathUtil::simplifyRuleTwo(MathUtil::simplifyRuleOne(ast));
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "x^p");
+  }
+
   TEST_F(MathUtilTest, containsTargetTrue) {
     std::string s = "z";
     ASTNode* ast = SBML_parseFormula("x^2 + 3 * y + sin(z)");
@@ -453,6 +600,7 @@ namespace {
     EXPECT_EQ(s, "(1 / 2) * (2 * pi * x)^(1 / 2 - 1) * (2 * pi) * (x / exponentiale)^x + sqrt(2 * pi * x) * (x * (x / exponentiale)^(x - 1) * (1 / exponentiale) + (x / exponentiale)^x * ln(x / exponentiale))");
   }
 
+  /*
   TEST_F(MathUtilTest, taylorSeriesTest1) {
     ASTNode* ast = SBML_parseFormula("sin(x)");
     ASTNode* taylorSeries = MathUtil::simplify(MathUtil::taylorSeries(ast, "x", 0, 5));
@@ -473,6 +621,7 @@ namespace {
     std::string s = SBML_formulaToString(taylorSeries);
     EXPECT_EQ(s, "x + 1 + x^2 + x^3 + x^4 + x^5");
   }
+   */
 
   TEST_F(MathUtilTest, isEqualTreeTrue1) {
     ASTNode* ast1 = SBML_parseFormula("a*b");
@@ -492,6 +641,30 @@ namespace {
     EXPECT_TRUE(MathUtil::isEqualTree(ast1, ast2));
   }
 
+  TEST_F(MathUtilTest, isEqualTreeTrue4) {
+    ASTNode* ast1 = SBML_parseFormula("x^p");
+    ASTNode* ast2 = SBML_parseFormula("x^p");
+    EXPECT_TRUE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
+  TEST_F(MathUtilTest, isEqualTreeTrue5) {
+    ASTNode* ast1 = SBML_parseFormula("2^p");
+    ASTNode* ast2 = SBML_parseFormula("2^p");
+    EXPECT_TRUE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
+  TEST_F(MathUtilTest, isEqualTreeTrue6) {
+    ASTNode* ast1 = SBML_parseFormula("x^3");
+    ASTNode* ast2 = SBML_parseFormula("x^3");
+    EXPECT_TRUE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
+  TEST_F(MathUtilTest, isEqualTreeTrue7) {
+    ASTNode* ast1 = SBML_parseFormula("2^3");
+    ASTNode* ast2 = SBML_parseFormula("2^3");
+    EXPECT_TRUE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
   TEST_F(MathUtilTest, isEqualTreeFalse1) {
     ASTNode* ast1 = SBML_parseFormula("a*b");
     ASTNode* ast2 = SBML_parseFormula("a*c");
@@ -508,6 +681,64 @@ namespace {
     ASTNode* ast1 = SBML_parseFormula("sin(a*b)");
     ASTNode* ast2 = SBML_parseFormula("cos(a*b)");
     EXPECT_FALSE(MathUtil::isEqualTree(ast1, ast2));
+  }
+
+  /*
+  TEST_F(MathUtilTest, simplifyNewTest1) {
+    ASTNode* ast = SBML_parseFormula("((3 + 3 * 5) / 2) * x");
+    ASTNode* simp = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "9 * x");
+  }
+
+  TEST_F(MathUtilTest, simplifyNewTest2) {
+    ASTNode* ast = SBML_parseFormula("2 * x + (3 * 5 / 2) * y");
+    ASTNode* simp = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "2 * x + 15 / 2 * y");
+  }
+   */
+
+  TEST_F(MathUtilTest, simplifyNewTest3) {
+    ASTNode* ast = SBML_parseFormula("x ^ 2 * 2 + x * 3 + 1");
+    ASTNode* simp = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "2 * x^2 + 3 * x + 1");
+  }
+
+  TEST_F(MathUtilTest, simplifyNewTest4) {
+    ASTNode* ast = SBML_parseFormula("2 + x");
+    ASTNode* simp = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "x + 2");
+  }
+
+  TEST_F(MathUtilTest, simplifyNewTest5) {
+    ASTNode* ast = SBML_parseFormula("2 * x * 3");
+    ASTNode* simp = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "6 * x");
+  }
+
+  TEST_F(MathUtilTest, simplifyNewTest6) {
+    ASTNode* ast = SBML_parseFormula("2 * 4 * 5 * x * 3");
+    ASTNode* simp = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "120 * x");
+  }
+
+  TEST_F(MathUtilTest, simplifyNewTest7) {
+    ASTNode* ast = SBML_parseFormula("2 + x + 3");
+    ASTNode* simp = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "x + 5");
+  }
+
+  TEST_F(MathUtilTest, simplifyNewTest8) {
+    ASTNode* ast = SBML_parseFormula("2 + 4 + x + 3");
+    ASTNode* simp = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "x + 9");
   }
 
 } // namespace
