@@ -51,6 +51,103 @@ bool MathUtil::isLong(double f) {
   return MathUtil::floor(f) == f;
 }
 
+bool MathUtil::isRationalForm(const ASTNode *ast) {
+  auto type = ast->getType();
+  // we only support (a/b), (a / b), (a * b^(-c)), (a * (b/c)).
+  switch (type) {
+    case AST_RATIONAL: {
+      return true;
+    }
+    case AST_DIVIDE: {
+      if (ast->getLeftChild()->isInteger() && ast->getRightChild()->isInteger()) {
+        return true;
+      }
+      break;
+    }
+    case AST_TIMES: {
+      // restricted to binary tree only.
+      if (ast->getNumChildren() == 2 && ast->getLeftChild()->isInteger()) {
+        auto right = ast->getRightChild();
+        auto rightType = right->getType();
+        if (rightType == AST_POWER || rightType == AST_FUNCTION_POWER) {
+          return MathUtil::isRationalForm(right);
+        } else if (rightType == AST_RATIONAL) {
+          return true;
+        }
+      }
+      break;
+    }
+    case AST_POWER:
+    case AST_FUNCTION_POWER: {
+      if (ast->getLeftChild()->isInteger() && ast->getRightChild()->isInteger()) {
+        auto order = ast->getRightChild()->getValue();
+        if (order < 0) {
+          return true;
+        }
+      }
+      break;
+    }
+    default:
+      break;
+  }
+  return false;
+}
+
+ASTNode* MathUtil::reduceFraction(const ASTNode *ast) {
+  // we only support (a/b), (a / b), (a * b^(-c)), (a * (b/c)).
+  if (!MathUtil::isRationalForm(ast)) {
+    return ast->deepCopy();
+  }
+  long numerator, denominator;
+  auto type = ast->getType();
+
+  switch(type) {
+    case AST_RATIONAL: {
+      numerator = ast->getNumerator();
+      denominator = ast->getDenominator();
+      break;
+    }
+    case AST_DIVIDE: {
+      numerator = (long) ast->getLeftChild()->getValue();
+      denominator = (long) ast->getRightChild()->getValue();
+      break;
+    }
+    case AST_TIMES: {
+      auto right = ast->getRightChild();
+      auto rightType = right->getType();
+      if (rightType == AST_POWER || rightType == AST_FUNCTION_POWER) { // (a* b^(-c)) -> (a/(b^c))
+        numerator = ast->getLeftChild()->getValue();
+        auto rational = MathUtil::reduceFraction(right);
+        denominator = rational->getDenominator();
+      } else if (rightType == AST_RATIONAL) { // (a * (b/c)) => (a*b/c)
+        numerator = ast->getLeftChild()->getValue() * right->getNumerator();
+        denominator = right->getDenominator();
+      }
+      break;
+    }
+    case AST_POWER:
+    case AST_FUNCTION_POWER: { // (b^(-c)) -> (1/(b^c))
+      auto order = ast->getRightChild()->getValue() * -1;
+      numerator = 1;
+      denominator = pow(ast->getLeftChild()->getValue(), order);
+      break;
+    }
+    default:
+      return ast->deepCopy(); // never reach here.
+  }
+
+  long gcd = boost::math::gcd(numerator, denominator);
+  numerator /= gcd;
+  denominator /= gcd;
+  auto postReduction = new ASTNode();
+  if (denominator == 1) {  // reduced to a number
+    postReduction->setValue(numerator);
+  } else { // still rational number
+    postReduction->setType(AST_RATIONAL);
+    postReduction->setValue(numerator, denominator);
+  }
+  return postReduction;
+}
 
 ASTNode* MathUtil::differentiate(const ASTNode *ast, std::string target) {
   // We do not expect that *ast is a binary tree, so we will convert it at first.
@@ -775,7 +872,7 @@ bool MathUtil::containsTarget(const ASTNode *ast, std::string target)
 
 ASTNode* MathUtil::simplify(const ASTNode *ast) {
   ASTNode *binaryTree = ASTNodeUtil::reduceToBinary(ast);
-  ASTNodeType_t type = binaryTree->getType();
+  auto type = binaryTree->getType();
   ASTNode *left, *right, *simplifiedRoot, *tmpl, *tmpr;
 
   if ((!binaryTree->isOperator())
@@ -1051,7 +1148,6 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
 ASTNode* MathUtil::simplifyNew(const ASTNode *ast) {
   ASTNode *postRuleOne = MathUtil::simplifyRuleOne(ast);
   ASTNode *postRuleTwo = MathUtil::simplifyRuleTwo(postRuleOne);
-  std::cout << std::endl << "GCD(6, 15) = " << boost::math::gcd(6, 15) << std::endl;
   return postRuleTwo;
 }
 
@@ -1091,7 +1187,7 @@ ASTNode* MathUtil::simplifyRuleOne(const ASTNode *ast) {
   left  = children[0];
   right = children[1];
 
-  ASTNodeType_t type = ast->getType();
+  auto type = ast->getType();
   switch (type) {
     case AST_PLUS: {
       // a + (b + c) == (a + b) + c -> a + b + c
@@ -1160,7 +1256,7 @@ ASTNode* MathUtil::simplifyRuleOne(const ASTNode *ast) {
       simplifiedRoot->addChild(left->deepCopy());
       ASTNode *power = new ASTNode();
       power->setType(AST_POWER);
-      ASTNodeType_t rightType = right->getType();
+      auto rightType = right->getType();
       if (rightType == AST_POWER || rightType == AST_FUNCTION_POWER) {
         if (right->getRightChild()->isNumber()) {
           auto degree = right->getRightChild()->getValue();
@@ -1233,7 +1329,7 @@ ASTNode* MathUtil::simplifyRuleTwo(const ASTNode *ast) {
   }
   left  = children[0];
   right = children[1];
-  ASTNodeType_t type = ast->getType();
+  auto type = ast->getType();
 
   switch (type) {
     case AST_PLUS: {

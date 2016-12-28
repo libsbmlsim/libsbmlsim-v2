@@ -13,12 +13,14 @@ class MathUtil {
   static double exp(double x);
   static double fabs(double x);
   static bool isLong(double f);
+  static bool isRationalForm(const ASTNode *ast);
   static bool containsTarget(const ASTNode *ast, std::string target);
   static ASTNode* simplify(const ASTNode *ast);
   static ASTNode* simplifyNew(const ASTNode *ast);
   static ASTNode* simplifyRuleOne(const ASTNode *ast);
   static ASTNode* simplifyRuleTwo(const ASTNode *ast);
   static ASTNode* differentiate(const ASTNode *ast, std::string target);
+  static ASTNode* reduceFraction(const ASTNode *ast);
   static ASTNode* taylorSeries(const ASTNode *ast, std::string target, double point, int order);
   static bool isEqualTree(const ASTNode *root1, const ASTNode *root2);
  private:

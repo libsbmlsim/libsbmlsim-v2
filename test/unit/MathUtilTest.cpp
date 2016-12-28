@@ -7,6 +7,76 @@ namespace {
 
   class MathUtilTest : public ::testing::Test{};
 
+  TEST_F(MathUtilTest, reductionTest1) {
+    ASTNode* ast = SBML_parseL3Formula("(6/18)");
+    ASTNode* reduc = MathUtil::reduceFraction(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "(1/3)");
+  }
+
+  TEST_F(MathUtilTest, reductionTest2) {
+    ASTNode* ast = SBML_parseL3Formula("6 / 18");
+    ASTNode* reduc = MathUtil::reduceFraction(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "(1/3)");
+  }
+
+  TEST_F(MathUtilTest, reductionTest3) {
+    ASTNode* ast = SBML_parseL3Formula("8 / 2");
+    ASTNode* reduc = MathUtil::reduceFraction(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "4");
+  }
+
+  TEST_F(MathUtilTest, reductionTest4) {
+    ASTNode* ast = SBML_parseL3Formula("9 / 2");
+    ASTNode* reduc = MathUtil::reduceFraction(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "(9/2)");
+  }
+
+  TEST_F(MathUtilTest, reductionTest5) {
+    ASTNode* ast = SBML_parseL3Formula("2.5 / 2");
+    ASTNode* reduc = MathUtil::reduceFraction(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "2.5 / 2");
+  }
+
+  TEST_F(MathUtilTest, reductionTest6) {
+    ASTNode* ast = SBML_parseL3Formula("x / 2");
+    ASTNode* reduc = MathUtil::reduceFraction(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "x / 2");
+  }
+
+  TEST_F(MathUtilTest, reductionTest7) {
+    ASTNode* ast = SBML_parseFormula("2^(-3)");
+    ASTNode* reduc = MathUtil::reduceFraction(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "(1/8)");
+  }
+
+  TEST_F(MathUtilTest, reductionTest8) {
+    ASTNode* ast = SBML_parseFormula("2^(3)");
+    ASTNode* reduc = MathUtil::reduceFraction(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "2^3");
+  }
+
+  TEST_F(MathUtilTest, reductionTest9) {
+    ASTNode* ast = SBML_parseFormula("2 * 2^(-3)");
+    ASTNode* reduc = MathUtil::reduceFraction(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "(1/4)");
+  }
+
+  TEST_F(MathUtilTest, reductionTest10) {
+    ASTNode* ast = SBML_parseL3Formula("9 * (4/30)");
+    ASTNode* reduc = MathUtil::reduceFraction(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "(6/5)");
+  }
+
   TEST_F(MathUtilTest, simplifyRuleOneTest1) {
     ASTNode* ast = SBML_parseFormula("((x + y) + 1) + 2");
     ASTNode* simp = MathUtil::simplifyRuleOne(ast);
