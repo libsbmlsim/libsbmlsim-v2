@@ -1146,8 +1146,18 @@ ASTNode* MathUtil::simplify(const ASTNode *ast) {
 }
 
 ASTNode* MathUtil::simplifyNew(const ASTNode *ast) {
-  ASTNode *postRuleOne = MathUtil::simplifyRuleOne(ast);
-  ASTNode *postRuleTwo = MathUtil::simplifyRuleTwo(postRuleOne);
+  ASTNode *inputAST, *outputAST;
+  outputAST = ast->deepCopy();
+  do {
+    inputAST = outputAST;
+    outputAST = simplifyTwoPath(inputAST);
+  } while (!MathUtil::isEqualTree(inputAST, outputAST));
+  return outputAST;
+}
+
+ASTNode* MathUtil::simplifyTwoPath(const ASTNode *ast) {
+  auto postRuleOne = MathUtil::simplifyRuleOne(ast);
+  auto postRuleTwo = MathUtil::simplifyRuleTwo(postRuleOne);
   return postRuleTwo;
 }
 
@@ -1299,6 +1309,7 @@ ASTNode* MathUtil::simplifyRuleTwo(const ASTNode *ast) {
   std::vector<ASTNode*> children;
 
   if ((!ast->isOperator())
+      && (ast->getType() != AST_REAL)
       && (ast->getType() != AST_FUNCTION_POWER)
       && (ast->getType() != AST_POWER)
       && (ast->getType() != AST_FUNCTION_LN)
@@ -1310,6 +1321,13 @@ ASTNode* MathUtil::simplifyRuleTwo(const ASTNode *ast) {
     return ast->deepCopy();
   }
 
+  // simplify number. If a number is just an integer, return as AST_INTEGER
+  if (ast->getType() == AST_REAL && MathUtil::isLong(ast->getValue())) {
+    long lval = (long)ast->getValue();
+    simplifiedRoot = new ASTNode();
+    simplifiedRoot->setValue(lval);
+    return simplifiedRoot;
+  }
   // simplify only even index for AST_FUNCTION_PIECEWISE
   // AST_FUNCTION_PIECEWISE is not binay tree.
   if (ast->getType() == AST_FUNCTION_PIECEWISE) {
@@ -1389,51 +1407,80 @@ ASTNode* MathUtil::simplifyRuleTwo(const ASTNode *ast) {
       return simplifiedRoot;
     }
     case AST_TIMES: {
-      auto count = 0;
+      ASTNode *rationalNode = nullptr;
+      ASTNode *doubleNode = nullptr;
       auto countRational = 0;
-      double product = 1.0;
+      auto countDouble = 0;
+      double productDouble = 1.0;
       long productNumerator = 1;
       long productDenominator = 1;
-      // for integer and real numbers
       for (auto i = 0; i < children.size(); i++) {
         ASTNode *child = children[i];
-        if (child->isNumber() && !child->isRational()) {
-          double val;
-          val = child->getValue();
-          if (val == 0.0) {  // x * 0 -> 0
-            simplifiedRoot = new ASTNode();
-            simplifiedRoot->setValue(0.0);
-            return simplifiedRoot;
+        if (child->isNumber()) {
+          if (child->isRational() || child->isInteger()) { // for integer and rational numbers
+            long nval = child->getNumerator();
+            long dval = 1;
+            if (nval == 0) {  // x * 0 -> 0
+              simplifiedRoot = new ASTNode();
+              simplifiedRoot->setValue(0.0);
+              return simplifiedRoot;
+            }
+            productNumerator *= nval;
+            if (child->isRational()) {
+              dval = child->getDenominator();
+            }
+            productDenominator *= dval;
+            countRational++;
+          } else { // for real number
+            double val;
+            val = child->getValue();
+            if (val == 0.0) {  // x * 0 -> 0
+              simplifiedRoot = new ASTNode();
+              simplifiedRoot->setValue(0.0);
+              return simplifiedRoot;
+            }
+            productDouble *= val;
+            countDouble++;
           }
-          product *= val;
-          count++;
         }
       }
-      // for rational numbers
-      for (auto i = 0; i < children.size(); i++) {
-        ASTNode *child = children[i];
-        if (child->isRational()) {
-          auto nval = child->getNumerator();
-          auto dval = child->getDenominator();
-          if (nval == 0) {  // x * 0 -> 0
-            simplifiedRoot = new ASTNode();
-            simplifiedRoot->setValue(0.0);
-            return simplifiedRoot;
-          }
-          productNumerator *= nval;
-          productDenominator *= dval;
-          countRational++;
+      if (countRational > 0) {
+        auto tmpRational = new ASTNode();
+        tmpRational->setValue(productNumerator, productDenominator);
+        rationalNode = MathUtil::reduceFraction(tmpRational);
+        // if rationalNode is just a node of "1", then ignore it.
+        if (rationalNode->isInteger() && rationalNode->getValue() == 1) {
+          rationalNode = nullptr;
         }
       }
-      if (count == children.size()) { // (1 * 2 * 3) -> 6
-        simplifiedRoot = new ASTNode();
-        simplifiedRoot->setValue(product);
-      } else {  // (x * y * 1 * 2) -> x * y * 2
+      if (countDouble > 0 && productDouble != 1.0) {
+        if (rationalNode != nullptr && rationalNode->isInteger()) { // (1.5 * 3) -> 4.5
+          // integer * real number -> real number
+          productDouble *= rationalNode->getValue();
+          rationalNode = nullptr;  // we don't need rationalNode anymore.
+        }
+        doubleNode = new ASTNode();
+        doubleNode->setValue(productDouble);
+      }
+      if (countRational == children.size()) {      // (1 * 2 * 3) -> 6
+        if (rationalNode == nullptr) {
+          rationalNode = new ASTNode();
+          rationalNode->setValue(1);
+        }
+        simplifiedRoot = rationalNode;
+      } else if (countDouble == children.size()) { // (1.5 * 2.0) -> 3.0
+        if (doubleNode == nullptr) {
+          doubleNode = new ASTNode();
+          doubleNode->setValue(1);
+        }
+        simplifiedRoot = doubleNode;
+      } else {                                     // (x * y * 1.5 * 2) -> 3.0 * x * y
         simplifiedRoot = new ASTNode(AST_TIMES);
-        if (product != 1.0) {
-          ASTNode *sumNode = new ASTNode();
-          sumNode->setValue(product);
-          simplifiedRoot->addChild(sumNode);
+        if (rationalNode != nullptr) {
+          simplifiedRoot->addChild(rationalNode);
+        }
+        if (doubleNode != nullptr) {
+          simplifiedRoot->addChild(doubleNode);
         }
         for (auto i = 0; i < children.size(); i++) {
           ASTNode *child = children[i];
@@ -1441,7 +1488,12 @@ ASTNode* MathUtil::simplifyRuleTwo(const ASTNode *ast) {
             simplifiedRoot->addChild(child->deepCopy());
           }
         }
+        if (simplifiedRoot->getNumChildren() == 0) { // simplified result is "1".
+          simplifiedRoot = new ASTNode();
+          simplifiedRoot->setValue(1);
+        }
       }
+      // to support "(a*f(x) + b*f(x)) -> (a+b)*f(x)", we had to convert this AST to binary tree.
       return ASTNodeUtil::reduceToBinary(simplifiedRoot);
     }
     case AST_POWER:

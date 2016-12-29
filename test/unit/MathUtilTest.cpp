@@ -753,7 +753,6 @@ namespace {
     EXPECT_FALSE(MathUtil::isEqualTree(ast1, ast2));
   }
 
-  /*
   TEST_F(MathUtilTest, simplifyNewTest1) {
     ASTNode* ast = SBML_parseFormula("((3 + 3 * 5) / 2) * x");
     ASTNode* simp = MathUtil::simplifyNew(ast);
@@ -765,9 +764,8 @@ namespace {
     ASTNode* ast = SBML_parseFormula("2 * x + (3 * 5 / 2) * y");
     ASTNode* simp = MathUtil::simplifyNew(ast);
     std::string s = SBML_formulaToString(simp);
-    EXPECT_EQ(s, "2 * x + 15 / 2 * y");
+    EXPECT_EQ(s, "2 * x + (15/2) * y");
   }
-   */
 
   TEST_F(MathUtilTest, simplifyNewTest3) {
     ASTNode* ast = SBML_parseFormula("x ^ 2 * 2 + x * 3 + 1");
@@ -809,6 +807,13 @@ namespace {
     ASTNode* simp = MathUtil::simplifyNew(ast);
     std::string s = SBML_formulaToString(simp);
     EXPECT_EQ(s, "x + 9");
+  }
+
+  TEST_F(MathUtilTest, simplifyNewTest9) {
+    ASTNode* ast = SBML_parseFormula("2 * x^2 + 3 * x^2");
+    ASTNode* simp = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "5 * x^2");
   }
 
 } // namespace

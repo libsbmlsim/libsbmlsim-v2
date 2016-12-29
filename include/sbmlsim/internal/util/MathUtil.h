@@ -17,6 +17,7 @@ class MathUtil {
   static bool containsTarget(const ASTNode *ast, std::string target);
   static ASTNode* simplify(const ASTNode *ast);
   static ASTNode* simplifyNew(const ASTNode *ast);
+  static ASTNode* simplifyTwoPath(const ASTNode *ast);
   static ASTNode* simplifyRuleOne(const ASTNode *ast);
   static ASTNode* simplifyRuleTwo(const ASTNode *ast);
   static ASTNode* differentiate(const ASTNode *ast, std::string target);
