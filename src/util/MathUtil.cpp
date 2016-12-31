@@ -1356,7 +1356,7 @@ ASTNode* MathUtil::simplifyRuleTwo(const ASTNode *ast) {
       double sum = 0.0;
       for (auto i = 0; i < children.size(); i++) {
         ASTNode *child = children[i];
-        if (child->isNumber()) {
+        if (child->isNumber()) { // XXX rational
           sum += child->getValue();
           count++;
         } else if (child->getType() == AST_TIMES && child->getLeftChild()->isNumber()) {

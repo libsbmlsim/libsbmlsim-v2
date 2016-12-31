@@ -816,4 +816,13 @@ namespace {
     EXPECT_EQ(s, "5 * x^2");
   }
 
+  /*
+  TEST_F(MathUtilTest, simplifyNewTest10) {
+    ASTNode* ast = SBML_parseFormula("(1/2) + 1");
+    ASTNode* simp = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToString(simp);
+    EXPECT_EQ(s, "(3/2)");
+  }
+   */
+
 } // namespace
