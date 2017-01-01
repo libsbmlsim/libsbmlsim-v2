@@ -1309,6 +1309,7 @@ ASTNode* MathUtil::simplifyRuleTwo(const ASTNode *ast) {
   std::vector<ASTNode*> children;
 
   if ((!ast->isOperator())
+      && (!ast->isRational())
       && (ast->getType() != AST_REAL)
       && (ast->getType() != AST_FUNCTION_POWER)
       && (ast->getType() != AST_POWER)
@@ -1328,6 +1329,11 @@ ASTNode* MathUtil::simplifyRuleTwo(const ASTNode *ast) {
     simplifiedRoot->setValue(lval);
     return simplifiedRoot;
   }
+  // simplify rational number.
+  if (ast->isRational()) {
+    return MathUtil::reduceFraction(ast);
+  }
+
   // simplify only even index for AST_FUNCTION_PIECEWISE
   // AST_FUNCTION_PIECEWISE is not binay tree.
   if (ast->getType() == AST_FUNCTION_PIECEWISE) {

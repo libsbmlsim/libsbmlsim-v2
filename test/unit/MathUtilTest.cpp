@@ -816,8 +816,16 @@ namespace {
     EXPECT_EQ(s, "5 * x^2");
   }
 
-  /*
   TEST_F(MathUtilTest, simplifyNewTest10) {
+    ASTNode* ast = new ASTNode();
+    ast->setValue((long)6,(long)24);
+    ASTNode* reduc = MathUtil::simplifyNew(ast);
+    std::string s = SBML_formulaToL3String(reduc);
+    EXPECT_EQ(s, "(1/4)");
+  }
+
+  /*
+  TEST_F(MathUtilTest, simplifyNewTest11) {
     ASTNode* ast = SBML_parseFormula("(1/2) + 1");
     ASTNode* simp = MathUtil::simplifyNew(ast);
     std::string s = SBML_formulaToString(simp);
