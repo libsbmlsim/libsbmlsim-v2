@@ -23,3 +23,10 @@ add_test(
         COMMAND $<TARGET_FILE:MathUtilTest>
 )
 
+# test: ASTNodeUtil
+add_executable(ASTNodeUtilTest ASTNodeUtilTest.cpp)
+target_link_libraries(ASTNodeUtilTest gtest_main sbmlsim)
+add_test(
+        NAME ASTNodeUtilTest
+        COMMAND $<TARGET_FILE:ASTNodeUtilTest>
+)

@@ -106,3 +106,47 @@ ASTNode *ASTNodeUtil::reduceToBinary(const ASTNode *node) {
 
   return ret;
 }
+
+bool ASTNodeUtil::isEqual(const ASTNode *ast1, const ASTNode *ast2) {
+  // accept nullptr for ast1 and ast2.
+  if (ast1 == nullptr && ast2 == nullptr) {
+    return true;
+  } else if (ast1 == nullptr) { // ast2 != nullptr
+    return false;
+  } else if (ast2 == nullptr) { // ast1 != nullptr
+    return false;
+  }
+  bool equal = true;
+  equal &= ast1->getType() == ast2->getType();
+
+  if (ast1->isInteger() && ast2->isInteger()) {
+    equal &= ast2->getInteger() == ast1->getInteger();
+  }
+  if (ast1->isName() && ast2->isName()) {
+    equal &= (std::strcmp(ast1->getName(), ast2->getName()) == 0);
+  }
+  if (ast1->isRational() && ast2->isRational()) {
+    equal &= ast2->getNumerator() == ast1->getNumerator()
+             && ast2->getDenominator() == ast1->getDenominator();
+  }
+  if ((ast2->getType() == AST_REAL_E) && (ast1->getType() == AST_REAL_E)) {
+    equal &= isnan(ast1->getMantissa()) ? isnan(ast2->getMantissa()) : ast2->getMantissa() == ast1->getMantissa()
+                                                                       && ast2->getExponent() == ast1->getExponent();
+  } else if (ast1->isReal() && ast2->isReal()) {
+    equal &= isnan(ast1->getReal()) ? isnan(ast2->getReal()) : ast2->getReal() == ast1->getReal();
+  }
+
+  equal &= ast1->isSetId() == ast2->isSetId();
+  if (equal && ast1->isSetId()) {
+    equal &= ast1->getId() == ast2->getId();
+  }
+  equal &= ast1->isSetStyle() == ast2->isSetStyle();
+  if (equal && ast1->isSetStyle()) {
+    equal &= ast1->getStyle() == ast2->getStyle();
+  }
+  equal &= ast1->isSetUnits() == ast2->isSetUnits();
+  if (equal && ast1->isSetUnits()) {
+    equal &= ast1->getUnits() == ast2->getUnits();
+  }
+  return equal;
+}
