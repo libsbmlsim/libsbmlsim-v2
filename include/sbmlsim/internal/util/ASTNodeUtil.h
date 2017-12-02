@@ -2,6 +2,7 @@
 #define INCLUDE_SBMLSIM_INTERNAL_UTIL_ASTNODEUTIL_H_
 
 #include <sbml/SBMLTypes.h>
+#include <cmath>
 
 class ASTNodeUtil {
  public:

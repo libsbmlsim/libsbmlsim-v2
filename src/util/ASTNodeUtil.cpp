@@ -130,10 +130,10 @@ bool ASTNodeUtil::isEqual(const ASTNode *ast1, const ASTNode *ast2) {
              && ast2->getDenominator() == ast1->getDenominator();
   }
   if ((ast2->getType() == AST_REAL_E) && (ast1->getType() == AST_REAL_E)) {
-    equal &= isnan(ast1->getMantissa()) ? isnan(ast2->getMantissa()) : ast2->getMantissa() == ast1->getMantissa()
+    equal &= std::isnan(ast1->getMantissa()) ? std::isnan(ast2->getMantissa()) : ast2->getMantissa() == ast1->getMantissa()
                                                                        && ast2->getExponent() == ast1->getExponent();
   } else if (ast1->isReal() && ast2->isReal()) {
-    equal &= isnan(ast1->getReal()) ? isnan(ast2->getReal()) : ast2->getReal() == ast1->getReal();
+    equal &= std::isnan(ast1->getReal()) ? std::isnan(ast2->getReal()) : ast2->getReal() == ast1->getReal();
   }
 
   equal &= ast1->isSetId() == ast2->isSetId();
