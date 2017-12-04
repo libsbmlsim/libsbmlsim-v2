@@ -24,10 +24,19 @@ endif()
 
 # test: testintegrator
 if (PYTHONINTERP_FOUND)
-#add_test(
-#NAME TestIntegrator
-#COMMAND ${PYTHON_EXECUTABLE} $<TARGET_FILE_DIR:testintegrator>/batchTest.py 1-25
-#)
+  add_test(
+    NAME IntegrationTest
+    COMMAND ${PYTHON_EXECUTABLE} $<TARGET_FILE_DIR:testintegrator>/batchTest.py 1-25
+    )
+
+  if(FALSE)
+  foreach(case_id RANGE 1 25)
+    add_test(
+      NAME IntegrationTestCase${case_id}
+      COMMAND ${PYTHON_EXECUTABLE} $<TARGET_FILE_DIR:testintegrator>/batchTest.py ${case_id}-${case_id}
+      )
+  endforeach()
+  endif()
 endif()
 
 # installation: testintegrator
@@ -44,6 +53,6 @@ add_custom_command(TARGET testintegrator PRE_BUILD
       ${CMAKE_CURRENT_SOURCE_DIR}/batchTest.py $<TARGET_FILE_DIR:testintegrator>
   COMMAND ${CMAKE_COMMAND} -E copy
       ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.py $<TARGET_FILE_DIR:testintegrator>
-  COMMAND cd $<TARGET_FILE_DIR:testintegrator>/testsuite/src/front-ends/standalone/testsuite-ui && ant jar
+  COMMAND cd $<TARGET_FILE_DIR:testintegrator>/testsuite/src/test-runner/testsuite-core && ant jar
   COMMENT "Building testsuite"
   )

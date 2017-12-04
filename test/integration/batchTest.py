@@ -28,8 +28,8 @@ wrapperName='libsbmlsim-v2'
 deplibs='simple-xml-2.6.4.jar'
 scriptdir=sys.path[0]
 guidir=scriptdir + '/testsuite/src/front-ends/standalone/testsuite-ui/dist'
-jardir=scriptdir + '/testsuite/src/front-ends/standalone/testsuite-core/dist'
-libdir=scriptdir + '/testsuite/src/front-ends/standalone/testsuite-core/libs'
+jardir=scriptdir + '/testsuite/src/test-runner/testsuite-core/dist'
+libdir=scriptdir + '/testsuite/src/test-runner/testsuite-core/libs'
 
 # check args
 if (len(sys.argv) < 2):
