@@ -28,14 +28,14 @@ wrapperName='libsbmlsim-v2'
 deplibs='simple-xml-2.6.4.jar'
 scriptdir=sys.path[0]
 guidir=scriptdir + '/testsuite/src/front-ends/standalone/testsuite-ui/dist'
-jardir=scriptdir + '/testsuite/src/front-ends/standalone/testsuite-core/dist'
-libdir=scriptdir + '/testsuite/src/front-ends/standalone/testsuite-core/libs'
+jardir=scriptdir + '/testsuite/src/test-runner/testsuite-core/dist'
+libdir=scriptdir + '/testsuite/src/test-runner/testsuite-core/libs'
 
 # check args
 if (len(sys.argv) < 2):
-  print sys.argv[0] + ': command line SBML test runner'
-  print 'Usage: ' + sys.argv[0] + ' [-g|--gui] test-range'
-  print '   ex: ' + sys.argv[0] + ' 1-1000'
+  print('%s: command line SBML test runner' % sys.argv[0])
+  print('Usage: %s [-g|--gui] test-range' % sys.argv[0])
+  print('   ex: %s 1-1000' % sys.argv[0])
   sys.exit(0)
 
 # parse args
@@ -50,23 +50,24 @@ test_range = sys.argv[1]
 
 # check libs
 if (not os.path.isfile(jardir + '/' + deplibs)):
-  print 'Copy ' + deplibs + ' to ' + jardir
+  print('Copy %s to %s' % (deplibs, jardir))
   shutil.copy2(libdir + '/'  + deplibs, jardir)
 
 # run tests
 os.chdir(jardir)
 cmd = 'java -cp ' + deplibs +':. -jar testsuite-core.jar -r ' + wrapperName + ' ' + test_range + ' | paste -d " " - - '
-array  =  subprocess.check_output(cmd, shell=True).splitlines()
+array = subprocess.check_output(cmd, shell=True).splitlines()
 
 # check status
 failed = False
 if len(array) <= 0:
   failed = False
 for line in array:
+  line = line.decode() # python3 compatible
   line = line.replace('NoMatch', bcolors.bold + bcolors.red + 'NoMatch' + bcolors.endc) 
   line = line.replace(' Match',  bcolors.bold + bcolors.green + ' Match' + bcolors.endc) 
   line = line.replace('CannotSolve',  bcolors.bold + bcolors.blue + 'CannotSolve' + bcolors.endc) 
-  print line
+  print(line)
   if re.match('.*NoMatch.*', line):
     failed = True
 
