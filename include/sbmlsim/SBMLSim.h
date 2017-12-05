@@ -18,6 +18,7 @@ class SBMLSim {
   static void simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfiguration &conf);
   static void simulateRungeKuttaFehlberg78(const ModelWrapper *model, const RunConfiguration &conf);
   static void simulateRosenbrock4(const ModelWrapper *model, const RunConfiguration &conf);
+  static void simulateLSODA(const ModelWrapper *model, const RunConfiguration &conf);
 };
 
 #endif /* INCLUDE_SBMLSIM_SBMLSIM_H_ */

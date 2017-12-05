@@ -4,3 +4,6 @@
 [submodule "test/integration/testsuite"]
 	path = test/integration/testsuite
 	url = https://github.com/sbmlteam/sbml-test-suite.git
+[submodule "thirdparty/liblsoda"]
+	path = thirdparty/liblsoda
+	url = https://github.com/libsbmlsim/liblsoda.git
