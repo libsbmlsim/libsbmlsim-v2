@@ -19,7 +19,6 @@ endif()
 if(NOT without-shared)
   add_library(sbmlsim SHARED ${LIBSBMLSIM_SOURCES})
   target_link_libraries(sbmlsim ${LIBSBML_LIBRARIES})
-  #target_link_libraries(sbmlsim lsoda)
   set_target_properties(sbmlsim PROPERTIES VERSION "${PACKAGE_VERSION}" SOVERSION "${PACKAGE_COMPAT_VERSION}")
   install(TARGETS sbmlsim
     LIBRARY DESTINATION lib
