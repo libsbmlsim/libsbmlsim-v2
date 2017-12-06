@@ -48,14 +48,14 @@ set(LIBSBMLSIM_TEST_DIR ${PROJECT_SOURCE_DIR}/test)
 set(LIBSBMLSIM_EXAMPLE_DIR ${PROJECT_SOURCE_DIR}/example)
 set(LIBSBMLSIM_DOC_DIR ${PROJECT_SOURCE_DIR}/doc)
 
+# third-party libraries
+add_subdirectory(${LIBSBMLSIM_THIRDPARTY_DIR})
+
 # headers
 add_subdirectory(${LIBSBMLSIM_INCLUDE_DIR})
 
 # sources
 add_subdirectory(${LIBSBMLSIM_SOURCE_DIR})
-
-# third-party libraries
-add_subdirectory(${LIBSBMLSIM_THIRDPARTY_DIR})
 
 # tests
 if(NOT without-test)

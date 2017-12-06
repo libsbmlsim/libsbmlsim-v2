@@ -6,6 +6,7 @@
 #include "sbmlsim/internal/system/SBMLSystemJacobi.h"
 #include "sbmlsim/internal/integrate/IntegrateConst.h"
 #include "sbmlsim/internal/observer/StdoutCsvObserver.h"
+#include "sbmlsim/internal/thirdparty/liblsoda.h"
 
 using namespace boost::numeric;
 using state = SBMLSystem::state;
@@ -36,6 +37,7 @@ void SBMLSim::simulate(const Model *model, unsigned int level, unsigned int vers
   simulateRungeKuttaDopri5(modelWrapper, conf);
   // simulateRungeKuttaFehlberg78(modelWrapper, conf);
   // simulateRosenbrock4(modelWrapper, conf);
+  // simulateLSODA(modelWrapper, conf);
 
   delete modelWrapper;
   delete dummyDocument;
@@ -100,4 +102,47 @@ void SBMLSim::simulateRosenbrock4(const ModelWrapper *model, const RunConfigurat
   // integrate
   integrate_const(stepper, implicitSystem, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(),
                   std::ref(observer));
+}
+
+/*****************************
+ * TODO implement with LSODA *
+ *****************************/
+
+int fex(double t, double *y, double *ydot, void *data) {
+  ydot[0] = - 0.1 * y[0];
+  ydot[1] = 0.1 * y[0];
+  return 0;
+}
+
+void SBMLSim::simulateLSODA(const ModelWrapper *model, const RunConfiguration &conf) {
+  int neq = 2;
+  double rtol[] = {1e-4, 1e-4};
+  double atol[] = {1e-4, 1e-4};
+  double y[] = {10.0, 0.0};
+
+  lsoda_opt_t opt = {0};
+  opt.ixpr = 0;
+  opt.rtol = rtol;
+  opt.atol = atol;
+  opt.itask = 1;
+
+  lsoda_context_t ctx = {0};
+  ctx.function = fex;
+  ctx.neq = neq;
+  ctx.data = NULL;
+  ctx.state = 1;
+
+  lsoda_prepare(&ctx, &opt);
+
+  double t = 0.0;
+  for (double tout = 0.1; tout <= 4.0; tout += 0.1) {
+    lsoda(&ctx, y, &t, tout);
+    std::cout << t << " " << tout << " " << y[0] << " " << y[1] << std::endl;
+
+    if (ctx.state <= 0) {
+      std::cout << "[ERROR] ctx.stat <= 0" << std::endl;
+    }
+  }
+
+  lsoda_free(&ctx);
 }
