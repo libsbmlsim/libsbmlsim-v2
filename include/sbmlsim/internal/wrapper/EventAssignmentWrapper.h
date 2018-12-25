@@ -4,6 +4,8 @@
 #include <sbml/SBMLTypes.h>
 #include <string>
 
+LIBSBML_CPP_NAMESPACE_USE
+
 class EventAssignmentWrapper {
  public:
   explicit EventAssignmentWrapper(const EventAssignment *eventAssignment);

@@ -4,6 +4,8 @@
 #include <sbml/SBMLTypes.h>
 #include <string>
 
+LIBSBML_CPP_NAMESPACE_USE
+
 class CompartmentWrapper {
  public:
   explicit CompartmentWrapper(const Compartment *compartment);

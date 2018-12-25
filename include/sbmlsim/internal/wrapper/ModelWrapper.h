@@ -13,6 +13,8 @@
 #include "sbmlsim/internal/wrapper/AssignmentRuleWrapper.h"
 #include "sbmlsim/internal/wrapper/RateRuleWrapper.h"
 
+LIBSBML_CPP_NAMESPACE_USE
+
 class ModelWrapper {
  public:
   explicit ModelWrapper(const Model *model);

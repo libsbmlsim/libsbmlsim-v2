@@ -3,6 +3,8 @@
 
 #include <sbml/SBMLTypes.h>
 
+LIBSBML_CPP_NAMESPACE_USE
+
 class ASTNodeWrapper {
  public:
   explicit ASTNodeWrapper(const ASTNode *node);

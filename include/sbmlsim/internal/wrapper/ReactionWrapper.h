@@ -6,6 +6,8 @@
 #include <vector>
 #include "sbmlsim/internal/wrapper/SpeciesReferenceWrapper.h"
 
+LIBSBML_CPP_NAMESPACE_USE
+
 class ReactionWrapper {
  public:
   explicit ReactionWrapper(const Reaction *reaction);
