@@ -4,6 +4,8 @@
 #include <sbml/SBMLTypes.h>
 #include <cmath>
 
+LIBSBML_CPP_NAMESPACE_USE
+
 class ASTNodeUtil {
  public:
   static ASTNode *rewriteFunctionDefinition(const ASTNode *node, const ListOfFunctionDefinitions *functionDefinitions);

@@ -5,6 +5,8 @@
 #include <vector>
 #include "sbmlsim/internal/wrapper/EventAssignmentWrapper.h"
 
+LIBSBML_CPP_NAMESPACE_USE
+
 class EventWrapper {
  public:
   explicit EventWrapper(const Event *event);
