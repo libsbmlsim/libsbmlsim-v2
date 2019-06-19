@@ -30,3 +30,6 @@ build
 # IntelliJ
 .idea/
 cmake-build-*/
+
+# VSCode
+.vscode/
