@@ -5,7 +5,7 @@
 # Usage: foreach i ({00001..00980}); echo -n "$i: "; /usr/bin/grep -i -B 1 testtags testsuite/cases/semantic/$i/$i-model.m; end | perl parseModel.pl
 # Usage: for i in `./batchTestPrintFailed.sh 1-100`; do echo -n "$i: "; /usr/bin/grep -i -B 1 testtags testsuite/cases/semantic/$i/$i-model.m; done | perl parseModel.pl
 #
-# Last modified: Thu, 20 Jun 2019 02:34:04 +0900
+# Last modified: Thu, 20 Jun 2019 02:42:50 +0900
 #
 
 use strict;
@@ -83,7 +83,6 @@ while(<>) {
     print OUT "  </tr>\n";
   }
 }
-print "MAX = $maxlength\n";
 print OUT "</tbody>\n</table>\n</center></body>\n</html>\n";
 
 sub ltrim {
