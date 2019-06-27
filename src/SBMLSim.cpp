@@ -8,6 +8,7 @@
 #include "sbmlsim/internal/observer/StdoutCsvObserver.h"
 #include "sbmlsim/internal/thirdparty/liblsoda.h"
 
+// Useless comment to check my git setup
 using namespace boost::numeric;
 using state = SBMLSystem::state;
 
