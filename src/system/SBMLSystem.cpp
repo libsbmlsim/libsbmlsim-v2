@@ -329,10 +329,10 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
       return evaluatePiecewiseNode(node, x, t);
     // What I add
     case AST_NAME_AVOGADRO:
-      ASTNode *new_node;
-      new_node->setType(AST_REAL);
-      new_node->setValue(6.02214179e23);
-      return evaluateASTNodeLambda(new_node);
+      auto ret = node->deepCopy();
+      ret->setType(AST_REAL);
+      ret->setValue(6.02214179e23);
+      return evaluateASTNodeLambda(ret);
     default:
       std::cout << "type = " << type << std::endl;
       break;
