@@ -1,3 +1,4 @@
+#include <cmath>
 #include "sbmlsim/internal/system/SBMLSystem.h"
 #include <algorithm>
 #include "sbmlsim/internal/util/MathUtil.h"
@@ -280,6 +281,11 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
   avoganode->setType(AST_REAL);
   avoganode->setValue(6.02214179e23);
 
+  // Modified node for PI :
+  auto pinode = node->deepCopy();
+  pinode->setType(AST_REAL);
+  pinode->setValue(M_PI);  // Using the value already existing in C++
+
   // evaluate recursively
   ASTNodeType_t type = node->getType();
   switch (type) {
@@ -335,6 +341,8 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
     // What I add
     case AST_NAME_AVOGADRO:
       return evaluateASTNodeLambda(avoganode);
+    case AST_CONSTANT_PI:
+      return evaluateASTNodeLambda(pinode);
     default:
       std::cout << "type = " << type << std::endl;
       break;
