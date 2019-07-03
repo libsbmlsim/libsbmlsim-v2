@@ -275,6 +275,11 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
     return evaluateASTNode(node, x, t);
   };
 
+  // Modified node for Avogadro :
+  auto avoganode = node->deepCopy();
+  avoganode->setType(AST_REAL);
+  avoganode->setValue(6.02214179e23);
+
   // evaluate recursively
   ASTNodeType_t type = node->getType();
   switch (type) {
@@ -329,10 +334,7 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
       return evaluatePiecewiseNode(node, x, t);
     // What I add
     case AST_NAME_AVOGADRO:
-      auto ret = node->deepCopy();
-      ret->setType(AST_REAL);
-      ret->setValue(6.02214179e23);
-      return evaluateASTNodeLambda(ret);
+      return evaluateASTNodeLambda(avoganode);
     default:
       std::cout << "type = " << type << std::endl;
       break;
