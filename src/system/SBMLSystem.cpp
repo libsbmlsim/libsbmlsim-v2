@@ -276,16 +276,6 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
     return evaluateASTNode(node, x, t);
   };
 
-  // Modified node for Avogadro :
-  auto avoganode = node->deepCopy();
-  avoganode->setType(AST_REAL);
-  avoganode->setValue(6.02214179e23);
-
-  // Modified node for PI :
-  auto pinode = node->deepCopy();
-  pinode->setType(AST_REAL);
-  pinode->setValue(M_PI);  // Using the value already existing in C++
-
   // evaluate recursively
   ASTNodeType_t type = node->getType();
   switch (type) {
@@ -338,11 +328,6 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
       return MathUtil::floor(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_PIECEWISE:
       return evaluatePiecewiseNode(node, x, t);
-    // What I add
-    case AST_NAME_AVOGADRO:
-      return evaluateASTNodeLambda(avoganode);
-    case AST_CONSTANT_PI:
-      return evaluateASTNodeLambda(pinode);
     default:
       std::cout << "type = " << type << std::endl;
       break;
