@@ -66,7 +66,7 @@ ASTNode *ASTNodeUtil::rewriteFamousConstants(const ASTNode *node) {
   ASTNode *ret;
 
   if (node->getType() == AST_NAME_AVOGADRO) {
-    ret = new ASTNode(AST_REAL);
+    ret = new ASTNode(AST_REAL_E);
     ret->setValue(6.02214179e23);
     return ret;
   }
