@@ -3,10 +3,11 @@
 
 InitialAssignmentWrapper::InitialAssignmentWrapper(const InitialAssignment *initialAssignment) {
   this->symbol = initialAssignment->getSymbol();
-  this->math = ASTNodeUtil::rewriteFunctionDefinition(
+  auto maths = ASTNodeUtil::rewriteFunctionDefinition(
       initialAssignment->getMath(),
       initialAssignment->getModel()->getListOfFunctionDefinitions());
-  this->math = ASTNodeUtil::rewriteFamousConstants(initialAssignment->getMath());
+  this->math = ASTNodeUtil::rewriteFamousConstants(maths);
+  delete maths;
 }
 
 InitialAssignmentWrapper::InitialAssignmentWrapper(const InitialAssignmentWrapper &initialAssignment) {

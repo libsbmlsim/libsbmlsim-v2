@@ -3,10 +3,11 @@
 
 AssignmentRuleWrapper::AssignmentRuleWrapper(const AssignmentRule *assignmentRule) {
   this->variable = assignmentRule->getVariable();
-  this->math = ASTNodeUtil::rewriteFunctionDefinition(
+  auto maths = ASTNodeUtil::rewriteFunctionDefinition(
       assignmentRule->getMath(),
       assignmentRule->getModel()->getListOfFunctionDefinitions());
-  this->math = ASTNodeUtil::rewriteFamousConstants(assignmentRule->getMath());
+  this->math = ASTNodeUtil::rewriteFamousConstants(maths);
+  delete maths;
 }
 
 AssignmentRuleWrapper::AssignmentRuleWrapper(const AssignmentRuleWrapper &assignmentRule) {
