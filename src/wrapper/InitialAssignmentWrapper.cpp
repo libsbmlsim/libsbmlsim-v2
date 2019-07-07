@@ -6,6 +6,7 @@ InitialAssignmentWrapper::InitialAssignmentWrapper(const InitialAssignment *init
   this->math = ASTNodeUtil::rewriteFunctionDefinition(
       initialAssignment->getMath(),
       initialAssignment->getModel()->getListOfFunctionDefinitions());
+  this->math = ASTNodeUtil::rewriteFamousConstants(initialAssignment->getMath());
 }
 
 InitialAssignmentWrapper::InitialAssignmentWrapper(const InitialAssignmentWrapper &initialAssignment) {

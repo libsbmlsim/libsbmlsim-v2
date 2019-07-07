@@ -6,6 +6,7 @@ AssignmentRuleWrapper::AssignmentRuleWrapper(const AssignmentRule *assignmentRul
   this->math = ASTNodeUtil::rewriteFunctionDefinition(
       assignmentRule->getMath(),
       assignmentRule->getModel()->getListOfFunctionDefinitions());
+  this->math = ASTNodeUtil::rewriteFamousConstants(assignmentRule->getMath());
 }
 
 AssignmentRuleWrapper::AssignmentRuleWrapper(const AssignmentRuleWrapper &assignmentRule) {
