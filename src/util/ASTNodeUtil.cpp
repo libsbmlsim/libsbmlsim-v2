@@ -178,3 +178,29 @@ bool ASTNodeUtil::isEqual(const ASTNode *ast1, const ASTNode *ast2) {
   }
   return equal;
 }
+
+// Because there is a problem with unsupported type AST_RELATIONAL_EQ (type = 308)
+ASTNode *ASTNodeUtil::rewriteEqual(const ASTNode *node){
+  ASTNode *ret;
+
+  if (node->getType() == AST_RELATIONAL_EQ) {
+    if (node->getRightChild() == node->getLeftChild()) {
+      ret->setType(AST_CONSTANT_TRUE);
+      ret->setValue(true);
+    } else {
+      ret->setType(AST_CONSTANT_FALSE);
+      ret->setValue(false);
+    }
+    return ret;
+  }
+
+  ret = node->deepCopy();
+
+  // replace children's local parameter node recursively
+  for (auto i = 0; i < ret->getNumChildren(); i++) {
+    auto newChild = rewriteFamousConstants(ret->getChild(i));
+    ret->replaceChild(i, newChild, DELETE_REPLACED_NODE);
+  }
+
+  return ret;
+}

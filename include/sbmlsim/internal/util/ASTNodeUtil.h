@@ -11,6 +11,7 @@ class ASTNodeUtil {
   static ASTNode *rewriteFunctionDefinition(const ASTNode *node, const ListOfFunctionDefinitions *functionDefinitions);
   static ASTNode *rewriteFamousConstants(const ASTNode *node);
   static ASTNode *rewriteLocalParameters(const ASTNode *node, const ListOfParameters *localParameters);
+  static ASTNode *rewriteEqual(const ASTNode *node);
   static ASTNode *reduceToBinary(const ASTNode *node);
   static bool isEqual(const ASTNode *ast1, const ASTNode *ast2);
  private:
