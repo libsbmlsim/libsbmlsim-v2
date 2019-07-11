@@ -328,8 +328,6 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
       return MathUtil::floor(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_PIECEWISE:
       return evaluatePiecewiseNode(node, x, t);
-    case AST_RELATIONAL_EQ:
-      return evaluateASTNodeLambda(node->getLeftChild()) == evaluateASTNodeLambda(node->getRightChild());
     default:
       std::cout << "type = " << type << std::endl;
       break;
@@ -434,6 +432,10 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x, do
       return true;
     case AST_CONSTANT_FALSE:
       return false;
+    case AST_RELATIONAL_EQ:
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
+      return left == right;
     case AST_RELATIONAL_LT:
       left = evaluateASTNodeLambda(node->getLeftChild());
       right = evaluateASTNodeLambda(node->getRightChild());
