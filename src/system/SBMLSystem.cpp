@@ -436,6 +436,10 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x, do
       left = evaluateASTNodeLambda(node->getLeftChild());
       right = evaluateASTNodeLambda(node->getRightChild());
       return left == right;
+    case AST_RELATIONAL_NEQ:
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
+      return left != right;
     case AST_RELATIONAL_LT:
       left = evaluateASTNodeLambda(node->getLeftChild());
       right = evaluateASTNodeLambda(node->getRightChild());
