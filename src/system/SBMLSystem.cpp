@@ -328,6 +328,8 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
       return MathUtil::floor(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_PIECEWISE:
       return evaluatePiecewiseNode(node, x, t);
+    case AST_RELATIONAL_EQ:
+      return evaluateASTNodeLambda(node->getLeftChild()) == evaluateASTNodeLambda(node->getRightChild());
     default:
       std::cout << "type = " << type << std::endl;
       break;
