@@ -316,8 +316,8 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
     case AST_REAL_E:
     case AST_CONSTANT_E:
       return node->getValue();
-    //case AST_FUNCTION_ARCSEC:
-      //return atan(sqrt(evaluateASTNodeLambda(node->getLeftChild() - 1)) * (evaluateASTNodeLambda(node->getLeftChild() + 1)));
+    case AST_FUNCTION_ARCSEC:
+      return atan( sqrt( (evaluateASTNodeLambda(node->getLeftChild())-1) * (evaluateASTNodeLambda(node->getLeftChild())+1) ) );
     case AST_FUNCTION_COSH:
       return cosh(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_COT:
