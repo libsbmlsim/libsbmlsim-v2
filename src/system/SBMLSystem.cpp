@@ -316,8 +316,24 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
     case AST_REAL_E:
     case AST_CONSTANT_E:
       return node->getValue();
+    case AST_FUNCTION_ARCCOT:
+      return atan(1 / evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCCSC:
+      return atan(1 / sqrt( (evaluateASTNodeLambda(node->getLeftChild())-1) * (evaluateASTNodeLambda(node->getLeftChild())+1) ));
     case AST_FUNCTION_ARCSEC:
       return atan( sqrt( (evaluateASTNodeLambda(node->getLeftChild())-1) * (evaluateASTNodeLambda(node->getLeftChild())+1) ) );
+    case AST_FUNCTION_ARCSINH:
+      return asinh(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCCOSH:
+      return acosh(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCTANH:
+      return atanh(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCSECH:
+      return log(1 + pow((1 - sqrt(evaluateASTNodeLambda(node->getLeftChild()))),0.5) / evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCCOTH:
+      return (1/2)*(log(evaluateASTNodeLambda(node->getLeftChild()) + 1) / (evaluateASTNodeLambda(node->getLeftChild()) - 1));
+    case AST_FUNCTION_ARCCSCH:
+      return log(1 + sqrt(1 + sqrt(evaluateASTNodeLambda(node->getLeftChild()))) / evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_COSH:
       return cosh(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_COT:
