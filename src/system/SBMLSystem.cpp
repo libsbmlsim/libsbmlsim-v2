@@ -316,6 +316,14 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
     case AST_REAL_E:
     case AST_CONSTANT_E:
       return node->getValue();
+    //case AST_FUNCTION_ARCSEC:
+      //return atan(sqrt(evaluateASTNodeLambda(node->getLeftChild() - 1)) * (evaluateASTNodeLambda(node->getLeftChild() + 1)));
+    case AST_FUNCTION_COSH:
+      return cosh(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_COT:
+      return 1/tan(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_CSC:
+      return 1/sin(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_EXP:
       return MathUtil::exp(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_ABS:
@@ -328,6 +336,10 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
       return MathUtil::floor(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_PIECEWISE:
       return evaluatePiecewiseNode(node, x, t);
+    case AST_FUNCTION_SEC:
+      return 1/cos(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_SINH:
+      return sinh(evaluateASTNodeLambda(node->getLeftChild()));
     default:
       std::cout << "type = " << type << std::endl;
       break;
@@ -386,6 +398,9 @@ double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x, do
   long long leftValue;
   ASTNodeType_t leftType = left->getType();
   switch (leftType) {
+    // Apparently type 256 misses here (Java app crash for test case 957)
+    case AST_INTEGER:
+      return node->getInteger();
     case AST_FUNCTION_CEILING:
       leftValue = MathUtil::ceil(evaluateASTNode(left->getLeftChild(), x, t));
       return MathUtil::factorial(leftValue);
@@ -463,6 +478,15 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x, do
       }
       rightCondition = evaluateConditionalNodeLambda(node->getRightChild());
       return rightCondition;
+    case AST_LOGICAL_NOT:
+      leftCondition = evaluateConditionalNodeLambda(node->getLeftChild());
+      if (!leftCondition) {
+        return false;
+      }
+      rightCondition = evaluateConditionalNodeLambda(node->getRightChild());
+      if (!rightCondition) {
+        return false;
+      }
     case AST_LOGICAL_OR:
       leftCondition = evaluateConditionalNodeLambda(node->getLeftChild());
       if (leftCondition) {
