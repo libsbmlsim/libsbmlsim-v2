@@ -1,8 +1,14 @@
 #include "sbmlsim/internal/wrapper/ParameterWrapper.h"
+#include "sbmlsim/internal/util/ASTNodeUtil.h"
 
 ParameterWrapper::ParameterWrapper(const Parameter *parameter)
     : id(parameter->getId()), value(parameter->getValue()) {
-  // nothing to do
+  // for PI
+  this->id = parameter->getId();
+  ASTNode *val;
+  val->setId(this->getId());
+  val->setValue(this->getValue());
+  this->value = ASTNodeUtil::rewriteFamousConstants(val);
 }
 
 ParameterWrapper::ParameterWrapper(const ParameterWrapper &parameter)
