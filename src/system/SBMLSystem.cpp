@@ -329,11 +329,11 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
     case AST_FUNCTION_ARCTANH:
       return atanh(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_ARCSECH:
-      return log(1 + pow((1 - sqrt(evaluateASTNodeLambda(node->getLeftChild()))),0.5) / evaluateASTNodeLambda(node->getLeftChild()));
+      return log( (1 + (sqrt(1 - (pow(evaluateASTNodeLambda(node->getLeftChild()) , 2))))) / evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_ARCCOTH:
-      return (1/2)*(log(evaluateASTNodeLambda(node->getLeftChild()) + 1) / (evaluateASTNodeLambda(node->getLeftChild()) - 1));
+      return ((1.0/2.0) * (log( ((evaluateASTNodeLambda(node->getLeftChild())) + 1) / ((evaluateASTNodeLambda(node->getLeftChild())) -1) )));
     case AST_FUNCTION_ARCCSCH:
-      return log(1 + sqrt(1 + sqrt(evaluateASTNodeLambda(node->getLeftChild()))) / evaluateASTNodeLambda(node->getLeftChild()));
+      return log( (1 + sqrt(1 + pow(evaluateASTNodeLambda(node->getLeftChild()), 2)))  / evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_COSH:
       return cosh(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_COT:
@@ -410,7 +410,8 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, const state &x, double 
 }
 
 double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x, double t) {
-  const ASTNode *left = node->getLeftChild();
+  // I let this for the moment :
+  /*const ASTNode *left = node->getLeftChild();
   long long leftValue;
   ASTNodeType_t leftType = left->getType();
   switch (leftType) {
@@ -427,7 +428,14 @@ double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x, do
   // not reachable
   std::cout << "left node type = " << leftType << std::endl;
   RuntimeExceptionUtil::throwUnknownNodeTypeException(leftType);
-  return 0.0;
+  return 0.0; */
+
+  // Like in libsbmlsim-v1, only works for int values, but satisfies factorial(4) in test case 957
+  int res;
+  for (int i = evaluateASTNode(node, x, t) ; i > 0 ; i--) {
+    res *= i;
+  }
+  return res;
 }
 
 double SBMLSystem::evaluatePiecewiseNode(const ASTNode *node, const state &x, double t) {

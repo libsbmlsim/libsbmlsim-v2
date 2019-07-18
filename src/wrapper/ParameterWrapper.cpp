@@ -3,12 +3,7 @@
 
 ParameterWrapper::ParameterWrapper(const Parameter *parameter)
     : id(parameter->getId()), value(parameter->getValue()) {
-  // for PI
-  this->id = parameter->getId();
-  ASTNode *val;
-  val->setId(this->getId());
-  val->setValue(this->getValue());
-  this->value = ASTNodeUtil::rewriteFamousConstants(val);
+  // nothing to do
 }
 
 ParameterWrapper::ParameterWrapper(const ParameterWrapper &parameter)
