@@ -411,16 +411,22 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, const state &x, double 
 
 double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x, double t) {
   // I let this for the moment :
-  /*const ASTNode *left = node->getLeftChild();
+  const ASTNode *left = node->getLeftChild();
   long long leftValue;
   ASTNodeType_t leftType = left->getType();
+  int res = left->getInteger();
+  
   switch (leftType) {
-    // Apparently type 256 misses here (Java app crash for test case 957)
     case AST_INTEGER:
-      return node->getInteger();
+      for (int i = (res-1) ; i > 0 ; i--) {
+        res *= i;
+      }
+      return res;
+
     case AST_FUNCTION_CEILING:
       leftValue = MathUtil::ceil(evaluateASTNode(left->getLeftChild(), x, t));
       return MathUtil::factorial(leftValue);
+
     default:
       break;
   }
@@ -428,14 +434,8 @@ double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x, do
   // not reachable
   std::cout << "left node type = " << leftType << std::endl;
   RuntimeExceptionUtil::throwUnknownNodeTypeException(leftType);
-  return 0.0; */
+  return 0.0;
 
-  // Like in libsbmlsim-v1, only works for int values, but satisfies factorial(4) in test case 957
-  int res;
-  for (int i = evaluateASTNode(node, x, t) ; i > 0 ; i--) {
-    res *= i;
-  }
-  return res;
 }
 
 double SBMLSystem::evaluatePiecewiseNode(const ASTNode *node, const state &x, double t) {
@@ -505,12 +505,10 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x, do
     case AST_LOGICAL_NOT:
       leftCondition = evaluateConditionalNodeLambda(node->getLeftChild());
       if (!leftCondition) {
-        return false;
+        return true;
       }
       rightCondition = evaluateConditionalNodeLambda(node->getRightChild());
-      if (!rightCondition) {
-        return false;
-      }
+      return rightCondition;
     case AST_LOGICAL_OR:
       leftCondition = evaluateConditionalNodeLambda(node->getLeftChild());
       if (leftCondition) {
