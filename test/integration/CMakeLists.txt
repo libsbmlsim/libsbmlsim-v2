@@ -53,6 +53,12 @@ add_custom_command(TARGET testintegrator PRE_BUILD
       ${CMAKE_CURRENT_SOURCE_DIR}/batchTest.py $<TARGET_FILE_DIR:testintegrator>
   COMMAND ${CMAKE_COMMAND} -E copy
       ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.py $<TARGET_FILE_DIR:testintegrator>
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${CMAKE_CURRENT_SOURCE_DIR}/batchTestPrintFailed.sh $<TARGET_FILE_DIR:testintegrator>
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${CMAKE_CURRENT_SOURCE_DIR}/mytable.css $<TARGET_FILE_DIR:testintegrator>
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${CMAKE_CURRENT_SOURCE_DIR}/parseModel.pl $<TARGET_FILE_DIR:testintegrator>
   COMMAND cd $<TARGET_FILE_DIR:testintegrator>/testsuite/src/test-runner/testsuite-core && ant jar
   COMMENT "Building testsuite"
   )

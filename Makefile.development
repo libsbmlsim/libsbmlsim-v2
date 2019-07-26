@@ -1,3 +1,17 @@
-all:
+all: clean git/submodule cmake/build cmake/test
+
+cmake/test:
+	cd build && ctest
+
+cmake/build:
+	mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. -Dwithout-static=ON && make
+
+cpplint:
+	cd build && make cpplint
+
+git/submodule:
 	git submodule update --init
-	rm -rf build && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. -Dwithout-static=ON && make && ctest && make cpplint
+
+.PHONY: clean
+clean:
+	rm -rf build
