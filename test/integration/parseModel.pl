@@ -2,14 +2,22 @@
 #
 # Author: Akira Funahashi <funa_at_bio.keio.ac.jp>
 #
-# Usage: foreach i ({00001..00980}); echo -n "$i: "; /usr/bin/grep -i -B 1 testtags testsuite/cases/semantic/$i/$i-model.m; end | perl parseModel.pl
+# Usage: foreach i ({00001..01780}); echo -n "$i: "; /usr/bin/grep -i -B 1 testtags testsuite/cases/semantic/$i/$i-model.m; end | perl parseModel.pl
 # Usage: for i in `./batchTestPrintFailed.sh 1-100`; do echo -n "$i: "; /usr/bin/grep -i -B 1 testtags testsuite/cases/semantic/$i/$i-model.m; done | perl parseModel.pl
 #
-# Last modified: Thu, 20 Jun 2019 02:42:50 +0900
+# Last modified: Fri, 26 Jul 2019 16:54:40 +0900
 #
 
 use strict;
 use warnings;
+
+my $version = "unknown";
+
+if (open(VERSIONFILE, "<testsuite/VERSION.txt")){
+  $version = <VERSIONFILE>;
+  chomp($version);
+  close(VERSIONFILE);
+}
 
 open(OUT, ">table.html") || die;
 
@@ -19,7 +27,7 @@ print OUT << "_EOH_";
   <link rel="stylesheet" href="mytable.css" type="text/css" media="screen, projection, tv, print" />
 </head>
 <body><center>
-<table id="rounded-corner"><caption>SBML test cases 2.0.2</caption>
+<table id="rounded-corner"><caption>SBML test cases $version</caption>
 <thead>
   <tr>
     <th scope="col" class="rounded-company">Model</th>
