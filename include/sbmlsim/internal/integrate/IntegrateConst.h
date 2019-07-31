@@ -23,6 +23,9 @@ size_t integrate_const_detail(
 
   while (odeint::detail::less_eq_with_sign(time + time_step, end_time, dt)) {
     // TODO create dependency graph for assignmentRules and initialAssignments
+
+    // Old code
+    /*
     // assignment rules
     system.handleAssignmentRule(start_state, time);
 
@@ -31,9 +34,20 @@ size_t integrate_const_detail(
 
     // assignment rules
     system.handleAssignmentRule(start_state, time);
+    */
 
     // observer
     obs(start_state, time);
+
+    if (time <= 0)  // Because according to the specifications it can sometimes go under 0 
+    {
+      system.handleInitialAssignment(start_state, time);
+    }
+    
+    if (time > 0)
+    {
+      system.handleAssignmentRule(start_time, time);
+    }
 
     st.do_step(system, start_state, time, dt);
 
