@@ -102,10 +102,46 @@ void SBMLSystem::handleEvent(state &x, double t) {
 }
 
 void SBMLSystem::handleInitialAssignment(state &x, double t) {
+  // Only works at t=0
   if (t > 0) {
     return;
   }
+  
+  // Going throught the initialAssignments
+  for (auto actual : model->getInitialAssignments()) {
+    // To know after which component of the model in concerned and how to modify it :
+    auto actual_symbol = actual->getSymbol();
+    auto actual_value = evaluateASTNode(actual->getMath(), x, t);
+    /* It's there that there is a question/problem : if there is the symbol of an other component in the math expression, the initialAssignment concerning
+    this symbol has to be handled first. But practicaly I can't see any problem because when evaluateASTNode() finds a case AST_NAME, it evaluates this node.
+    Do we still need to manually define who is evaluated or handled first ? */
 
+    // Next, go through all elements of the model to check if there is a match with symbols
+
+    //  1) Species
+    for (auto sp_actual : model->getSpecieses()) {
+      if(sp_actual.getId() == actual_symbol){
+        x[getStateIndexForVariable(sp_actual.getId())] = actual_value;
+      }
+    }
+
+    // 2) Compartments
+    for (auto cp_actual : model->getCompartments()) {
+      if(cp_actual.getId() == actual_symbol){
+        x[getStateIndexForVariable(cp_actual.getId())] = actual_value;
+      }
+    }
+
+    // 3) Parameters
+    for(auto pm_actual : model->getParameters()) {
+      if(pm_actual->getId() == actual_symbol){
+        x[getStateIndexForVariable(pm_actual->getId())] = actual_value;
+      }
+    }
+  }
+
+
+  /* Old code
   for (auto initialAssignment : model->getInitialAssignments()) {
     auto symbol = initialAssignment->getSymbol();
     auto value = evaluateASTNode(initialAssignment->getMath(), x, t);
@@ -146,7 +182,8 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
         x[index] = value;
       }
     }
-  }
+  } */
+
 }
 
 void SBMLSystem::handleAlgebraicRule(state &x, double t) {
@@ -154,58 +191,30 @@ void SBMLSystem::handleAlgebraicRule(state &x, double t) {
 }
 
 void SBMLSystem::handleAssignmentRule(state &x, double t) {
-  auto &assignmentRules = this->model->getAssignmentRules();
-  for (auto i = 0; i < assignmentRules.size(); i++) {
-    auto &variable = assignmentRules[i]->getVariable();
-    auto value = evaluateASTNode(assignmentRules[i]->getMath(), x, t);
+  // Going through AssignmentRules
+  for ( auto actual : model->getAssignmentRules() ) {
+    auto actual_symbol = actual->getVariable();
+    auto actual_value = evaluateASTNode(actual->getMath(), x, t);
 
-    bool continueImmediately = false;
-
-    // species
-    auto specieses = model->getSpecieses();
-    for (auto i = 0; i < specieses.size(); i++) {
-      if (variable == specieses[i].getId()) {
-        auto speciesIndex = getStateIndexForVariable(specieses[i].getId());
-        if (specieses[i].shouldMultiplyByCompartmentSizeOnAssignment()) {
-          auto compartments = model->getCompartments();
-          for (auto j = 0; j < compartments.size(); j++) {
-            if (specieses[i].getCompartmentId() == compartments[j].getId()) {
-              auto compartmentIndex = getStateIndexForVariable(compartments[j].getId());
-              x[speciesIndex] = value * x[compartmentIndex];
-            }
-          }
-        } else {
-          x[speciesIndex] = value;
-        }
-        continueImmediately = true;
-        break;
+    // Same procedure
+    // 1) Species
+    for ( auto sp_actual : model->getSpecieses()) {
+      if(sp_actual.getId() == actual_symbol){
+        x[getStateIndexForVariable(sp_actual.getId())] = actual_value;
       }
     }
-    if (continueImmediately) {
-      continue;
-    }
 
-    // compartment
-    auto compartments = model->getCompartments();
-    for (auto i = 0; i < compartments.size(); i++) {
-      if (variable == compartments[i].getId()) {
-        auto index = getStateIndexForVariable(compartments[i].getId());
-        x[index] = value;
-        continueImmediately = true;
-        break;
+    // 2) Compartments
+    for ( auto cp_actual : model->getCompartments()) {
+      if(cp_actual.getId() == actual_symbol){
+        x[getStateIndexForVariable(cp_actual.getId())] = actual_value;
       }
     }
-    if (continueImmediately) {
-      continue;
-    }
 
-    // global parameter
-    auto parameters = model->getParameters();
-    for (auto i = 0; i < parameters.size(); i++) {
-      if (variable == parameters[i]->getId()) {
-        auto index = getStateIndexForVariable(parameters[i]->getId());
-        x[index] = value;
-        break;
+    // 3) Parameters
+    for ( auto pm_actual : model->getParameters()) {
+      if(pm_actual->getId() == actual_symbol){
+        x[getStateIndexForVariable(pm_actual->getId())] = actual_value;
       }
     }
   }
