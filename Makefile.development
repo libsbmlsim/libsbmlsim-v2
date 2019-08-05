@@ -7,7 +7,7 @@ cmake/build:
 	mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. -Dwithout-static=ON && make
 
 cpplint:
-	cd build && make cpplint
+	cpplint --recursive ./{src,include,example}/
 
 git/submodule:
 	git submodule update --init

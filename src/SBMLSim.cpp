@@ -1,17 +1,20 @@
 #include "sbmlsim/SBMLSim.h"
 
-#include <iostream>
 #include <boost/numeric/odeint.hpp>
-#include "sbmlsim/internal/system/SBMLSystem.h"
-#include "sbmlsim/internal/system/SBMLSystemJacobi.h"
-#include "sbmlsim/internal/integrate/IntegrateConst.h"
+#include <iostream>
+#include <vector>
+#include "sbmlsim/internal/integrate/IntegrateTimes.h"
 #include "sbmlsim/internal/observer/StdoutCsvObserver.h"
+#include "sbmlsim/internal/system/SBMLSystem.h"
 #include "sbmlsim/internal/thirdparty/liblsoda.h"
 
-using namespace boost::numeric;
+using boost::numeric::odeint::runge_kutta4;
+using std::ref;
+using std::string;
+using std::vector;
 using state = SBMLSystem::state;
 
-void SBMLSim::simulate(const std::string &filepath, const RunConfiguration &conf) {
+void SBMLSim::simulate(const string &filepath, const RunConfiguration &conf) {
   SBMLReader reader;
   SBMLDocument *document = reader.readSBMLFromFile(filepath);
   simulate(document, conf);
@@ -36,7 +39,6 @@ void SBMLSim::simulate(const Model *model, unsigned int level, unsigned int vers
   // simulateRungeKutta4(modelWrapper, conf);
   simulateRungeKuttaDopri5(modelWrapper, conf);
   // simulateRungeKuttaFehlberg78(modelWrapper, conf);
-  // simulateRosenbrock4(modelWrapper, conf);
   // simulateLSODA(modelWrapper, conf);
 
   delete modelWrapper;
@@ -45,69 +47,74 @@ void SBMLSim::simulate(const Model *model, unsigned int level, unsigned int vers
 
 void SBMLSim::simulateRungeKutta4(const ModelWrapper *model, const RunConfiguration &conf) {
   SBMLSystem system(model);
-  odeint::runge_kutta4<state> stepper;
+  runge_kutta4<state> stepper;
   auto initialState = system.getInitialState();
   StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
+
+  // prepare TimeIterator
+  vector<double> observeTimes;
+  auto t_stop = conf.getDuration() + conf.getObserveInterval() / 2;
+  for (double t = 0.0; t <= t_stop; t += conf.getObserveInterval()) {
+    observeTimes.push_back(t);
+  }
 
   // print header
   observer.outputHeader();
 
   // integrate
-  sbmlsim::integrate_const(
-      stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), std::ref(observer));
+  sbmlsim::integrate_times(stepper, system, initialState, observeTimes.begin(), observeTimes.end(),
+                           conf.getStepInterval(), ref(observer));
 }
 
 void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfiguration &conf) {
   SBMLSystem system(model);
-  auto stepper = odeint::make_controlled<odeint::runge_kutta_dopri5<state> >(
-      conf.getAbsoluteTolerance() / 100.0, conf.getRelativeTolerance() / 100.0);
+  auto stepper = odeint::make_controlled<odeint::runge_kutta_dopri5<state> >(conf.getAbsoluteTolerance(),
+                                                                             conf.getRelativeTolerance());
   auto initialState = system.getInitialState();
   StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
+
+  // prepare TimeIterator
+  vector<double> observeTimes;
+  auto t_stop = conf.getDuration() + conf.getObserveInterval() / 2;
+  for (double t = 0.0; t <= t_stop; t += conf.getObserveInterval()) {
+    observeTimes.push_back(t);
+  }
 
   // print header
   observer.outputHeader();
 
   // integrate
-  sbmlsim::integrate_const(
-      stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), std::ref(observer));
+  sbmlsim::integrate_times(stepper, system, initialState, observeTimes.begin(), observeTimes.end(),
+                           conf.getObserveInterval(), ref(observer));
 }
 
 void SBMLSim::simulateRungeKuttaFehlberg78(const ModelWrapper *model, const RunConfiguration &conf) {
   SBMLSystem system(model);
-  auto stepper = odeint::make_controlled<odeint::runge_kutta_fehlberg78<state> >(
-      conf.getAbsoluteTolerance() / 100.0, conf.getRelativeTolerance() / 100.0);
+  auto stepper = odeint::make_controlled<odeint::runge_kutta_fehlberg78<state> >(conf.getAbsoluteTolerance(),
+                                                                                 conf.getRelativeTolerance());
   auto initialState = system.getInitialState();
   StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
+
+  // prepare TimeIterator
+  vector<double> observeTimes;
+  auto t_stop = conf.getDuration() + conf.getObserveInterval() / 2;
+  for (double t = 0.0; t <= t_stop; t += conf.getObserveInterval()) {
+    observeTimes.push_back(t);
+  }
 
   // print header
   observer.outputHeader();
 
   // integrate
-  sbmlsim::integrate_const(
-      stepper, system, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(), std::ref(observer));
-}
-
-void SBMLSim::simulateRosenbrock4(const ModelWrapper *model, const RunConfiguration &conf) {
-  SBMLSystem system(model);
-  SBMLSystemJacobi systemJacobi;
-  auto initialState = system.getInitialState();
-  auto stepper = odeint::make_dense_output(conf.getAbsoluteTolerance() / 100.0, conf.getRelativeTolerance() / 100.0,
-                                           odeint::rosenbrock4<double>());
-  auto implicitSystem = std::make_pair(system, systemJacobi);
-  StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
-
-  // print header
-  observer.outputHeader();
-
-  // integrate
-  integrate_const(stepper, implicitSystem, initialState, conf.getStart(), conf.getDuration(), conf.getStepInterval(),
-                  std::ref(observer));
+  sbmlsim::integrate_times(stepper, system, initialState, observeTimes.begin(), observeTimes.end(),
+                           conf.getObserveInterval(), ref(observer));
 }
 
 /*****************************
  * TODO implement with LSODA *
  *****************************/
 
+/*
 int fex(double t, double *y, double *ydot, void *data) {
   ydot[0] = - 0.1 * y[0];
   ydot[1] = 0.1 * y[0];
@@ -146,3 +153,4 @@ void SBMLSim::simulateLSODA(const ModelWrapper *model, const RunConfiguration &c
 
   lsoda_free(&ctx);
 }
+*/

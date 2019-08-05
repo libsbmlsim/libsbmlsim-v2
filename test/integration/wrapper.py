@@ -43,8 +43,8 @@ with open(setting_path, 'r') as f:
     if (words[0] == 'concentration'):
       concentration = words[1].strip()
 
-opts = '-t %s -d %s -v "%s" -a "%s" -c "%s"' \
-        % (duration, str(float(duration)/float(steps)), variables, amount, concentration)
+opts = '-t %s -s %s -v "%s" -a "%s" -c "%s"' \
+        % (duration, steps, variables, amount, concentration)
 
 #commandline = sim + ' ' + opts + ' ' + sbml_path + " | sed -e 's/ /,/g' > " + out_dir + '/' + num + '.csv'
 commandline = sim + ' ' + opts + ' ' + sbml_path + " > " + out_dir + '/' + num + '.csv'
