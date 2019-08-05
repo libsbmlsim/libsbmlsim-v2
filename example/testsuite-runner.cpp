@@ -1,11 +1,11 @@
 #include <sbmlsim/SBMLSim.h>
-#include <iostream>
+#include <algorithm>
+#include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <cstdlib>
 
 using namespace std;
 
@@ -14,7 +14,7 @@ RunConfiguration readSetting(const string &caseDirPath, const string &modelNumbe
 vector<string> split(const string &s, char delim);
 string trim(string &s);
 
-int main(int argc, const char* argv[]) {
+int main(int argc, const char *argv[]) {
   if (argc < 3) {
     usage(string(argv[0]));
     return 1;
@@ -51,7 +51,7 @@ RunConfiguration readSetting(const string &caseDirPath, const string &modelNumbe
   ifstream ifs(modelDirPath + "/" + settingFilename);
 
   /*
-   * [settings sample]
+   * [settings example]
    *
    * start: 0
    * duration: 5
@@ -100,7 +100,9 @@ RunConfiguration readSetting(const string &caseDirPath, const string &modelNumbe
 
   ifs.close();
 
-  auto stepInterval = duration / steps;
+  auto delta = 1.0 / 1024.0;
+  auto stepInterval = delta * duration / steps;
+  auto observeInterval = duration / steps;
   vector<OutputField> outputFields;
   for (auto i = 0; i < variables.size(); i++) {
     auto it = find(amount.begin(), amount.end(), variables[i]);
@@ -119,6 +121,7 @@ RunConfiguration readSetting(const string &caseDirPath, const string &modelNumbe
   cout << "start: " << start << endl;
   cout << "duration: " << duration << endl;
   cout << "stepInterval: " << stepInterval << endl;
+  cout << "stepInterval: " << observeInterval << endl;
   cout << "variables: " << endl;
   for (auto i = 0; i < outputFields.size(); i++) {
     cout << "  - " << outputFields[i] << endl;
@@ -127,7 +130,7 @@ RunConfiguration readSetting(const string &caseDirPath, const string &modelNumbe
   cout << "relative: " << relative << endl;
    */
 
-  return RunConfiguration(start, duration, stepInterval, outputFields, absolute, relative);
+  return RunConfiguration(start, duration, stepInterval, observeInterval, outputFields, absolute, relative);
 }
 
 vector<string> split(const string &s, char delim) {

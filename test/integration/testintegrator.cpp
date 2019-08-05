@@ -1,9 +1,9 @@
 #include <sbmlsim/SBMLSim.h>
+#include <algorithm>
+#include <boost/program_options.hpp>
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <algorithm>
-#include <boost/program_options.hpp>
 
 using namespace std;
 using namespace boost::program_options;
@@ -16,10 +16,11 @@ void usage(string myname, options_description opt) {
   exit(1);
 }
 
-int main(int argc, const char* argv[]) {
+int main(int argc, const char *argv[]) {
   bool isHelp;
   double duration;
-  double stepInterval;
+  uint32_t steps;
+  double delta;
   string variables;
   string amount;
   string concentration;
@@ -31,13 +32,16 @@ int main(int argc, const char* argv[]) {
   options_description optionsMethod("Method");
   options_description optionsOutput("Output");
 
+  // clang-format off
+
   optionsGeneral.add_options()
     ("help,h", "display this help and exit")
     ;
 
   optionsTime.add_options()
-    ("time,t", value<double>(&duration)->default_value(10.0, "10.0"), "specify simulation time")
-    ("dt,d", value<double>(&stepInterval)->default_value(0.1, "0.1"), "specify delta t")
+    ("time,t", value<double>(&duration)->default_value(10.0), "specify simulation time")
+    ("steps,s", value<uint32_t>(&steps)->default_value(10), "specify steps")
+    ("delta,d", value<double>(&delta)->default_value(1.0 / 1024.0, "1.0/1024.0"), "specify delta")
     ;
 
   optionsVariable.add_options()
@@ -61,13 +65,15 @@ int main(int argc, const char* argv[]) {
     ("outputFile,o", value<string>(&outputFile)->default_value("out.csv"), "specify output filename")
     ;
 
+  // clang-format on
+
   // merge all options
   optionsGeneral.add(optionsTime).add(optionsVariable).add(optionsTolerance).add(optionsMethod).add(optionsOutput);
   variables_map vm;
   string sbml;
 
   try {
-    auto const parse_result  = parse_command_line(argc, argv, optionsGeneral);
+    auto const parse_result = parse_command_line(argc, argv, optionsGeneral);
     store(parse_result, vm);
     notify(vm);
     auto array = collect_unrecognized(parse_result.options, include_positional);
@@ -80,12 +86,11 @@ int main(int argc, const char* argv[]) {
     usage(argv[0], optionsGeneral);
   }
 
-  // cout << "    SBML: [" << sbml << "]" << endl;
-  // cout << "duration: [" << duration << "]" << endl;
-  // cout << "      dt: [" << stepInterval << "]" << endl;
+  auto stepInterval = delta * duration / steps;
+  auto observeInterval = duration / steps;
 
-  vector<OutputField> outputFields = createOutputField(variables, amount, concentration);
-  RunConfiguration conf(duration, stepInterval, outputFields);
+  vector<OutputField> outputFields{createOutputField(variables, amount, concentration)};
+  RunConfiguration conf(duration, stepInterval, observeInterval, outputFields);
 
   SBMLSim::simulate(sbml, conf);
 
@@ -138,4 +143,3 @@ vector<OutputField> createOutputField(string variablesStr, string amountStr, str
 
   return ret;
 }
-
