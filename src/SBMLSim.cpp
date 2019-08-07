@@ -8,6 +8,10 @@
 #include "sbmlsim/internal/system/SBMLSystem.h"
 #include "sbmlsim/internal/thirdparty/liblsoda.h"
 
+using boost::numeric::odeint::runge_kutta4;
+using std::ref;
+using std::string;
+using std::vector;
 // Useless comment to check my git setup
 using namespace boost::numeric;
 using boost::numeric::odeint::runge_kutta4;
