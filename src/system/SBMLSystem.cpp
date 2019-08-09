@@ -285,11 +285,6 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
     return evaluateASTNode(node, x, t);
   };
 
-  // Because it's special I guess :
-  if(ASTNode_isSqrt(node) == 1){
-    return sqrt(evaluateASTNodeLambda(node->getLeftChild()));
-  }
-
   // evaluate recursively
   ASTNodeType_t type = node->getType();
   switch (type) {
@@ -383,9 +378,11 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
     case AST_FUNCTION_LN:
       return log(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_LOG:
-      return log10(evaluateASTNodeLambda(node->getLeftChild()));
+      return log10(evaluateASTNodeLambda(node->getRightChild()));
     case AST_FUNCTION_TAN:
       return tan(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ROOT:
+      return sqrt(evaluateASTNodeLambda(node->getRightChild()));
     default:
       std::cout << "type = " << type << std::endl;
       break;
