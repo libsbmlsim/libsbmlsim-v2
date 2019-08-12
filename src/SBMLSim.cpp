@@ -81,8 +81,10 @@ void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfi
 
   // prepare TimeIterator
   vector<double> observeTimes;
+  double t{0.0};
   auto t_stop = conf.getDuration() + conf.getObserveInterval() / 2;
-  for (double t = 0.0; t <= t_stop; t += conf.getObserveInterval()) {
+  for (auto i = 0; t <= t_stop; i++) {
+    t = conf.getObserveInterval() * i;
     observeTimes.push_back(t);
   }
 
