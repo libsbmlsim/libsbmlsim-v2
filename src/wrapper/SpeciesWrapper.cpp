@@ -40,6 +40,12 @@ SpeciesWrapper::SpeciesWrapper(const Species *species) {
   } else {
     this->divideByCompartmentSizeOnEvaluation = false;
   }
+
+  if (species->isSetConversionFactor()) {
+    this->conversionFactor = species->getConversionFactor();
+  } else {
+    this->conversionFactor = false;
+  }
 }
 
 SpeciesWrapper::SpeciesWrapper(const SpeciesWrapper &species) {
@@ -50,6 +56,7 @@ SpeciesWrapper::SpeciesWrapper(const SpeciesWrapper &species) {
   this->boundaryCondition = species.boundaryCondition;
   this->constant = species.constant;
   this->divideByCompartmentSizeOnEvaluation = species.divideByCompartmentSizeOnEvaluation;
+  this->conversionFactor = species.conversionFactor;
 }
 
 SpeciesWrapper::~SpeciesWrapper() {
@@ -86,4 +93,8 @@ bool SpeciesWrapper::shouldDivideByCompartmentSizeOnEvaluation() const {
 
 bool SpeciesWrapper::shouldMultiplyByCompartmentSizeOnAssignment() const {
   return shouldDivideByCompartmentSizeOnEvaluation();
+}
+
+const std::string SpeciesWrapper::conversionFactor() const {
+  return this->conversionFactor;
 }
