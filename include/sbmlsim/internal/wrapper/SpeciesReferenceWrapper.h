@@ -18,11 +18,15 @@ class SpeciesReferenceWrapper {
   const ASTNode *getStoichiometryMath() const;
   const StoichiometryType &getStoichiometryType() const;
   bool hasStoichiometryMath() const;
+  bool hasConversionFactorOrNot() const;
+  double getConversionFactor() const;
  private:
   std::string speciesId;
   double stoichiometry;
   ASTNode *stoichiometryMath;
   StoichiometryType stoichiometryType;
+  double conversionFactor;
+  bool hasConversionFactor;
 };
 
 enum class StoichiometryType {
