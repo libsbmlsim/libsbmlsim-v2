@@ -28,6 +28,8 @@ class ModelWrapper {
   std::vector<InitialAssignmentWrapper *> &getInitialAssignments();
   std::vector<AssignmentRuleWrapper *> &getAssignmentRules();
   std::vector<RateRuleWrapper *> &getRateRules();
+  bool hasConversionFactor() const;
+  const std::string &getConversionFactor() const;
  private:
   std::vector<SpeciesWrapper> specieses;
   std::vector<ParameterWrapper *> parameters;
@@ -37,6 +39,7 @@ class ModelWrapper {
   std::vector<InitialAssignmentWrapper *> initialAssignments;
   std::vector<AssignmentRuleWrapper *> assignmentRules;
   std::vector<RateRuleWrapper *> rateRules;
+  std::string conversionFactor;
 };
 
 #endif /* INCLUDE_SBMLSIM_INTERNAL_WRAPPER_MODELWRAPPER_H_ */

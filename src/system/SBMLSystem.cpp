@@ -242,6 +242,13 @@ void SBMLSystem::handleRateRule(const state &x, state &dxdt, double t) {
         } else {
           dxdt[index] = value;
         }
+
+        if (specieses[i].hasConversionFactor()) {
+          dxdt[index] *= specieses[i].getConversionFactor();
+        } else if (model->hasConversionFactor()) {
+          dxdt[index] *= model->getConversionFactor();
+        }
+
         continueImmediately = true;
         break;
       }

@@ -42,9 +42,10 @@ SpeciesWrapper::SpeciesWrapper(const Species *species) {
   }
 
   if (species->isSetConversionFactor()) {
+    this->hasConversionFactor = true;
     this->conversionFactor = species->getConversionFactor();
   } else {
-    this->conversionFactor = false;
+    this->hasConversionFactor = false;
   }
 }
 
@@ -95,6 +96,10 @@ bool SpeciesWrapper::shouldMultiplyByCompartmentSizeOnAssignment() const {
   return shouldDivideByCompartmentSizeOnEvaluation();
 }
 
-const std::string SpeciesWrapper::conversionFactor() const {
+const std::string &SpeciesWrapper::conversionFactor() const {
   return this->conversionFactor;
+}
+
+bool SpeciesWrapper::hasConversionFactor() const {
+  return this->hasConversionFactor;
 }

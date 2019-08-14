@@ -19,7 +19,8 @@ class SpeciesWrapper {
   bool isConstant() const;
   bool shouldDivideByCompartmentSizeOnEvaluation() const;
   bool shouldMultiplyByCompartmentSizeOnAssignment() const;
-  const std::string &conversionFactor() const;
+  bool hasConversionFactor() const;
+  const std::string &getConversionFactor() const;
  private:
   std::string id;
   double amountValue;
