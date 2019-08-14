@@ -28,7 +28,7 @@ class ModelWrapper {
   std::vector<InitialAssignmentWrapper *> &getInitialAssignments();
   std::vector<AssignmentRuleWrapper *> &getAssignmentRules();
   std::vector<RateRuleWrapper *> &getRateRules();
-  bool hasConversionFactor() const;
+  bool hasConversionFactorOrNot() const;
   double getConversionFactor() const;
  private:
   std::vector<SpeciesWrapper> specieses;

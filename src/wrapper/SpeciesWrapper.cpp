@@ -96,10 +96,10 @@ bool SpeciesWrapper::shouldMultiplyByCompartmentSizeOnAssignment() const {
   return shouldDivideByCompartmentSizeOnEvaluation();
 }
 
-double SpeciesWrapper::conversionFactor() const {
+double SpeciesWrapper::getConversionFactor() const {
   return this->conversionFactor;
 }
 
-bool SpeciesWrapper::hasConversionFactor() const {
+bool SpeciesWrapper::hasConversionFactorOrNot() const {
   return this->hasConversionFactor;
 }

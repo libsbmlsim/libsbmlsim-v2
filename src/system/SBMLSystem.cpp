@@ -243,9 +243,9 @@ void SBMLSystem::handleRateRule(const state &x, state &dxdt, double t) {
           dxdt[index] = value;
         }
 
-        if (specieses[i].hasConversionFactor()) {
+        if (specieses[i].hasConversionFactorOrNot()) {
           dxdt[index] *= specieses[i].getConversionFactor();
-        } else if (model->hasConversionFactor()) {
+        } else if (model->hasConversionFactorOrNot()) {
           dxdt[index] *= model->getConversionFactor();
         }
 

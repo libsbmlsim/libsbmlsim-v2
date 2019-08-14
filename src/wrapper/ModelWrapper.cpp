@@ -128,10 +128,10 @@ std::vector<RateRuleWrapper *> &ModelWrapper::getRateRules() {
   return this->rateRules;
 }
 
-double ModelWrapper::conversionFactor() const {
+double ModelWrapper::getConversionFactor() const {
   return this->conversionFactor;
 }
 
-bool ModelWrapper::hasConversionFactor() const {
+bool ModelWrapper::hasConversionFactorOrNot() const {
   return this->hasConversionFactor;
 }
