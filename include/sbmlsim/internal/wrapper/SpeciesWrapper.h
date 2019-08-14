@@ -20,7 +20,7 @@ class SpeciesWrapper {
   bool shouldDivideByCompartmentSizeOnEvaluation() const;
   bool shouldMultiplyByCompartmentSizeOnAssignment() const;
   bool hasConversionFactor() const;
-  const std::string &getConversionFactor() const;
+  double getConversionFactor() const;
  private:
   std::string id;
   double amountValue;
@@ -29,7 +29,8 @@ class SpeciesWrapper {
   bool boundaryCondition;
   bool constant;
   bool divideByCompartmentSizeOnEvaluation;
-  std::string conversionFactor;
+  double conversionFactor;
+  bool hasConversionFactor;
 };
 
 #endif /* INCLUDE_SBMLSIM_INTERNAL_WRAPPER_SPECIESWRAPPER_H_ */

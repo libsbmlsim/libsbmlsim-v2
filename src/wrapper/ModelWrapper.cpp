@@ -52,7 +52,7 @@ ModelWrapper::ModelWrapper(const Model *model) {
   // conversionFactor
   if (model->isSetConversionFactor()) {
     this->hasConversionFactor = true;
-    this->conversionFactor = model->getConversionFactor();
+    this->conversionFactor = model->getParameter(model->getConversionFactor())->getValue();
   } else {
     this->hasConversionFactor = false;
   }
@@ -128,7 +128,7 @@ std::vector<RateRuleWrapper *> &ModelWrapper::getRateRules() {
   return this->rateRules;
 }
 
-const std::string &ModelWrapper::conversionFactor() const {
+double ModelWrapper::conversionFactor() const {
   return this->conversionFactor;
 }
 
