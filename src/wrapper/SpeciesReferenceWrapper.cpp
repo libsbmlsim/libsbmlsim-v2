@@ -17,7 +17,12 @@ SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReference *species
     this->stoichiometryType = StoichiometryType::VALUE;
     this->stoichiometryMath = NULL;
   }
-  if ()  // I am there
+  if (speciesReference->getModel()->getSpecies(speciesReference->getId())->isSetConversionFactor()) {
+    this->hasConversionFactor = true;
+    this->conversionFactor = speciesReference->getModel()->getParameter(speciesReference->getModel()->getSpecies(speciesReference->getId())->getConversionFactor())->getValue();
+  } else {
+    this->hasConversionFactor = false;
+  }
 }
 
 SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReferenceWrapper &speciesReference) {
@@ -29,6 +34,7 @@ SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReferenceWrapper &
     this->stoichiometryMath = NULL;
   }
   this->stoichiometryType = speciesReference.stoichiometryType;
+  this->conversionFactor = speciesReference.conversionFactor;
 }
 
 SpeciesReferenceWrapper::~SpeciesReferenceWrapper() {
