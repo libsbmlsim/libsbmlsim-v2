@@ -3,6 +3,7 @@
 
 SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReference *speciesReference) {
   this->speciesId = speciesReference->getSpecies();
+
   if (speciesReference->isSetStoichiometryMath()) {
     this->stoichiometryMath = ASTNodeUtil::rewriteFunctionDefinition(
         speciesReference->getStoichiometryMath()->getMath(),
@@ -17,9 +18,10 @@ SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReference *species
     this->stoichiometryType = StoichiometryType::VALUE;
     this->stoichiometryMath = NULL;
   }
-  if (speciesReference->getModel()->getSpecies(speciesReference->getId())->isSetConversionFactor()) {
+
+  if (speciesReference->getModel()->getSpecies(this->getSpeciesId())->isSetConversionFactor()) {
     this->hasConversionFactor = true;
-    this->conversionFactor = speciesReference->getModel()->getParameter(speciesReference->getModel()->getSpecies(speciesReference->getId())->getConversionFactor())->getValue();
+    this->conversionFactor = speciesReference->getModel()->getParameter(speciesReference->getModel()->getSpecies(this->getSpeciesId())->getConversionFactor())->getValue();
   } else {
     this->hasConversionFactor = false;
   }
