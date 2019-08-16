@@ -21,6 +21,7 @@ SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReference *species
 
   if (speciesReference->getModel()->getSpecies(this->getSpeciesId())->isSetConversionFactor()) {
     this->hasConversionFactor = true;
+    // Error here line 25 : 99% sure that it makes IntegationTest run forever
     this->conversionFactor = speciesReference->getModel()->getParameter(speciesReference->getModel()->getSpecies(this->getSpeciesId())->getConversionFactor())->getValue();
   } else {
     this->hasConversionFactor = false;
