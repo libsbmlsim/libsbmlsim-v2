@@ -48,6 +48,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
         stoichiometry = reactant.getStoichiometry();
       }
       dxdt[index] -= value * stoichiometry;
+      // Conversion Factor if there is one
       if (reactant.hasConversionFactorOrNot()) {
         dxdt[index] *= reactant.getConversionFactor();
       } else if (model->hasConversionFactorOrNot()) {
@@ -65,6 +66,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
         stoichiometry = product.getStoichiometry();
       }
       dxdt[index] += value * stoichiometry;
+      // Conversion Factor if there is one
       if (product.hasConversionFactorOrNot()) {
         dxdt[index] *= product.getConversionFactor();
       } else if (model->hasConversionFactorOrNot()) {
