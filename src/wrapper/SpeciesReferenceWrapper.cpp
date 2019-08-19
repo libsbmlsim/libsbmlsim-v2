@@ -38,6 +38,7 @@ SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReferenceWrapper &
   }
   this->stoichiometryType = speciesReference.stoichiometryType;
   this->conversionFactor = speciesReference.conversionFactor;
+  this->hasConversionFactor = speciesReference.hasConversionFactor;
 }
 
 SpeciesReferenceWrapper::~SpeciesReferenceWrapper() {

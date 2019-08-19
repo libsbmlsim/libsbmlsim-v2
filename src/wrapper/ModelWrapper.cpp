@@ -67,6 +67,7 @@ ModelWrapper::ModelWrapper(const ModelWrapper &model) {
   this->initialAssignments = model.initialAssignments;
   this->assignmentRules = model.assignmentRules;
   this->conversionFactor = model.conversionFactor;
+  this->hasConversionFactor = model.hasConversionFactor;
 }
 
 ModelWrapper::~ModelWrapper() {

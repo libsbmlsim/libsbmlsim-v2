@@ -58,6 +58,7 @@ SpeciesWrapper::SpeciesWrapper(const SpeciesWrapper &species) {
   this->constant = species.constant;
   this->divideByCompartmentSizeOnEvaluation = species.divideByCompartmentSizeOnEvaluation;
   this->conversionFactor = species.conversionFactor;
+  this->hasConversionFactor = species.hasConversionFactor;
 }
 
 SpeciesWrapper::~SpeciesWrapper() {
