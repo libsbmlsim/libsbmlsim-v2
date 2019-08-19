@@ -39,7 +39,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
     delete clonedNode;
 
     // reactants
-    for (auto reactant : reaction.getReactants()) {
+    for (auto &reactant : reaction.getReactants()) {
       auto index = getStateIndexForVariable(reactant.getSpeciesId());
       double stoichiometry;
       if (reactant.hasStoichiometryMath()) {
@@ -57,7 +57,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
     }
 
     // products
-    for (auto product : reaction.getProducts()) {
+    for (auto &product : reaction.getProducts()) {
       auto index = getStateIndexForVariable(product.getSpeciesId());
       double stoichiometry;
       if (product.hasStoichiometryMath()) {
