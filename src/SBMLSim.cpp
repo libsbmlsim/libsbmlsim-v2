@@ -68,24 +68,26 @@ void SBMLSim::simulateRungeKutta4(const ModelWrapper *model, const RunConfigurat
 
 void SBMLSim::simulateRungeKuttaDopri5(const ModelWrapper *model, const RunConfiguration &conf) {
   SBMLSystem system(model);
-  auto stepper = odeint::make_controlled<odeint::runge_kutta_dopri5<state> >(conf.getAbsoluteTolerance(),
-                                                                             conf.getRelativeTolerance());
+  auto stepper = odeint::make_controlled<odeint::runge_kutta_dopri5<state> >(conf.getAbsoluteTolerance() / 1000.0,
+                                                                             conf.getRelativeTolerance() / 1000.0);
   auto initialState = system.getInitialState();
   StdoutCsvObserver observer(system.createOutputTargetsFromOutputFields(conf.getOutputFields()));
 
   // prepare TimeIterator
   vector<double> observeTimes;
+  double t{0.0};
   auto t_stop = conf.getDuration() + conf.getObserveInterval() / 2;
-  for (double t = 0.0; t <= t_stop; t += conf.getObserveInterval()) {
+  for (auto i = 0; t <= t_stop; i++) {
+    t = conf.getObserveInterval() * i;
     observeTimes.push_back(t);
   }
 
   // print header
   observer.outputHeader();
-
+  
   // integrate
   sbmlsim::integrate_times(stepper, system, initialState, observeTimes.begin(), observeTimes.end(),
-                           conf.getObserveInterval(), ref(observer));
+                           conf.getObserveInterval() / 1000.0, ref(observer));
 }
 
 void SBMLSim::simulateRungeKuttaFehlberg78(const ModelWrapper *model, const RunConfiguration &conf) {

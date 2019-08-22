@@ -40,6 +40,13 @@ SpeciesWrapper::SpeciesWrapper(const Species *species) {
   } else {
     this->divideByCompartmentSizeOnEvaluation = false;
   }
+
+  if (species->isSetConversionFactor()) {
+    this->hasConversionFactor = true;
+    this->conversionFactor = model->getParameter(species->getConversionFactor())->getValue();
+  } else {
+    this->hasConversionFactor = false;
+  }
 }
 
 SpeciesWrapper::SpeciesWrapper(const SpeciesWrapper &species) {
@@ -50,6 +57,8 @@ SpeciesWrapper::SpeciesWrapper(const SpeciesWrapper &species) {
   this->boundaryCondition = species.boundaryCondition;
   this->constant = species.constant;
   this->divideByCompartmentSizeOnEvaluation = species.divideByCompartmentSizeOnEvaluation;
+  this->conversionFactor = species.conversionFactor;
+  this->hasConversionFactor = species.hasConversionFactor;
 }
 
 SpeciesWrapper::~SpeciesWrapper() {
@@ -86,4 +95,12 @@ bool SpeciesWrapper::shouldDivideByCompartmentSizeOnEvaluation() const {
 
 bool SpeciesWrapper::shouldMultiplyByCompartmentSizeOnAssignment() const {
   return shouldDivideByCompartmentSizeOnEvaluation();
+}
+
+double SpeciesWrapper::getConversionFactor() const {
+  return this->conversionFactor;
+}
+
+bool SpeciesWrapper::hasConversionFactorOrNot() const {
+  return this->hasConversionFactor;
 }

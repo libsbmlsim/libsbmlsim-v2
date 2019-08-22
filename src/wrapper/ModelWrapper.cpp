@@ -48,6 +48,14 @@ ModelWrapper::ModelWrapper(const Model *model) {
       this->rateRules.push_back(new RateRuleWrapper(rateRule));
     }
   }
+
+  // conversionFactor
+  if (model->isSetConversionFactor()) {
+    this->hasConversionFactor = true;
+    this->conversionFactor = model->getParameter(model->getConversionFactor())->getValue();
+  } else {
+    this->hasConversionFactor = false;
+  }
 }
 
 ModelWrapper::ModelWrapper(const ModelWrapper &model) {
@@ -58,6 +66,8 @@ ModelWrapper::ModelWrapper(const ModelWrapper &model) {
   this->events = model.events;
   this->initialAssignments = model.initialAssignments;
   this->assignmentRules = model.assignmentRules;
+  this->conversionFactor = model.conversionFactor;
+  this->hasConversionFactor = model.hasConversionFactor;
 }
 
 ModelWrapper::~ModelWrapper() {
@@ -117,4 +127,12 @@ std::vector<AssignmentRuleWrapper *> &ModelWrapper::getAssignmentRules() {
 
 std::vector<RateRuleWrapper *> &ModelWrapper::getRateRules() {
   return this->rateRules;
+}
+
+double ModelWrapper::getConversionFactor() const {
+  return this->conversionFactor;
+}
+
+bool ModelWrapper::hasConversionFactorOrNot() const {
+  return this->hasConversionFactor;
 }

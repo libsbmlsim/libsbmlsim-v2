@@ -1,3 +1,4 @@
+#include <cmath>
 #include "sbmlsim/internal/system/SBMLSystem.h"
 #include <algorithm>
 #include "sbmlsim/internal/util/MathUtil.h"
@@ -38,7 +39,7 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
     delete clonedNode;
 
     // reactants
-    for (auto reactant : reaction.getReactants()) {
+    for (auto &reactant : reaction.getReactants()) {
       auto index = getStateIndexForVariable(reactant.getSpeciesId());
       double stoichiometry;
       if (reactant.hasStoichiometryMath()) {
@@ -46,11 +47,17 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
       } else {
         stoichiometry = reactant.getStoichiometry();
       }
-      dxdt[index] -= value * stoichiometry;
+      if (reactant.hasConversionFactorOrNot()) {
+        dxdt[index] -= value * stoichiometry * reactant.getConversionFactor();
+      } else if (model->hasConversionFactorOrNot()) {
+        dxdt[index] -= value * stoichiometry * model->getConversionFactor();
+      } else {
+        dxdt[index] -= value * stoichiometry;
+      }
     }
 
     // products
-    for (auto product : reaction.getProducts()) {
+    for (auto &product : reaction.getProducts()) {
       auto index = getStateIndexForVariable(product.getSpeciesId());
       double stoichiometry;
       if (product.hasStoichiometryMath()) {
@@ -58,7 +65,13 @@ void SBMLSystem::handleReaction(const state& x, state& dxdt, double t) {
       } else {
         stoichiometry = product.getStoichiometry();
       }
-      dxdt[index] += value * stoichiometry;
+      if (product.hasConversionFactorOrNot()) {
+        dxdt[index] += value * stoichiometry * product.getConversionFactor();
+      } else if (model->hasConversionFactorOrNot()) {
+        dxdt[index] += value * stoichiometry * model->getConversionFactor();
+      } else {
+        dxdt[index] += value * stoichiometry;
+      }
     }
   }
 
@@ -101,10 +114,46 @@ void SBMLSystem::handleEvent(state &x, double t) {
 }
 
 void SBMLSystem::handleInitialAssignment(state &x, double t) {
+  // Only works at t=0
   if (t > 0) {
     return;
   }
+  
+  // Going throught the initialAssignments
+  for (auto actual : model->getInitialAssignments()) {
+    // To know after which component of the model in concerned and how to modify it :
+    auto actual_symbol = actual->getSymbol();
+    auto actual_value = evaluateASTNode(actual->getMath(), x, t);
+    /* It's there that there is a question/problem : if there is the symbol of an other component in the math expression, the initialAssignment concerning
+    this symbol has to be handled first. But practicaly I can't see any problem because when evaluateASTNode() finds a case AST_NAME, it evaluates this node.
+    Do we still need to manually define who is evaluated or handled first ? */
 
+    // Next, go through all elements of the model to check if there is a match with symbols
+
+    //  1) Species
+    for (auto sp_actual : model->getSpecieses()) {
+      if(sp_actual.getId() == actual_symbol){
+        x[getStateIndexForVariable(sp_actual.getId())] = actual_value;
+      }
+    }
+
+    // 2) Compartments
+    for (auto cp_actual : model->getCompartments()) {
+      if(cp_actual.getId() == actual_symbol){
+        x[getStateIndexForVariable(cp_actual.getId())] = actual_value;
+      }
+    }
+
+    // 3) Parameters
+    for(auto pm_actual : model->getParameters()) {
+      if(pm_actual->getId() == actual_symbol){
+        x[getStateIndexForVariable(pm_actual->getId())] = actual_value;
+      }
+    }
+  }
+
+
+  /* Old code
   for (auto initialAssignment : model->getInitialAssignments()) {
     auto symbol = initialAssignment->getSymbol();
     auto value = evaluateASTNode(initialAssignment->getMath(), x, t);
@@ -145,7 +194,8 @@ void SBMLSystem::handleInitialAssignment(state &x, double t) {
         x[index] = value;
       }
     }
-  }
+  } */
+
 }
 
 void SBMLSystem::handleAlgebraicRule(state &x, double t) {
@@ -153,58 +203,30 @@ void SBMLSystem::handleAlgebraicRule(state &x, double t) {
 }
 
 void SBMLSystem::handleAssignmentRule(state &x, double t) {
-  auto &assignmentRules = this->model->getAssignmentRules();
-  for (auto i = 0; i < assignmentRules.size(); i++) {
-    auto &variable = assignmentRules[i]->getVariable();
-    auto value = evaluateASTNode(assignmentRules[i]->getMath(), x, t);
+  // Going through AssignmentRules
+  for ( auto actual : model->getAssignmentRules() ) {
+    auto actual_symbol = actual->getVariable();
+    auto actual_value = evaluateASTNode(actual->getMath(), x, t);
 
-    bool continueImmediately = false;
-
-    // species
-    auto specieses = model->getSpecieses();
-    for (auto i = 0; i < specieses.size(); i++) {
-      if (variable == specieses[i].getId()) {
-        auto speciesIndex = getStateIndexForVariable(specieses[i].getId());
-        if (specieses[i].shouldMultiplyByCompartmentSizeOnAssignment()) {
-          auto compartments = model->getCompartments();
-          for (auto j = 0; j < compartments.size(); j++) {
-            if (specieses[i].getCompartmentId() == compartments[j].getId()) {
-              auto compartmentIndex = getStateIndexForVariable(compartments[j].getId());
-              x[speciesIndex] = value * x[compartmentIndex];
-            }
-          }
-        } else {
-          x[speciesIndex] = value;
-        }
-        continueImmediately = true;
-        break;
+    // Same procedure
+    // 1) Species
+    for ( auto sp_actual : model->getSpecieses()) {
+      if(sp_actual.getId() == actual_symbol){
+        x[getStateIndexForVariable(sp_actual.getId())] = actual_value;
       }
     }
-    if (continueImmediately) {
-      continue;
-    }
 
-    // compartment
-    auto compartments = model->getCompartments();
-    for (auto i = 0; i < compartments.size(); i++) {
-      if (variable == compartments[i].getId()) {
-        auto index = getStateIndexForVariable(compartments[i].getId());
-        x[index] = value;
-        continueImmediately = true;
-        break;
+    // 2) Compartments
+    for ( auto cp_actual : model->getCompartments()) {
+      if(cp_actual.getId() == actual_symbol){
+        x[getStateIndexForVariable(cp_actual.getId())] = actual_value;
       }
     }
-    if (continueImmediately) {
-      continue;
-    }
 
-    // global parameter
-    auto parameters = model->getParameters();
-    for (auto i = 0; i < parameters.size(); i++) {
-      if (variable == parameters[i]->getId()) {
-        auto index = getStateIndexForVariable(parameters[i]->getId());
-        x[index] = value;
-        break;
+    // 3) Parameters
+    for ( auto pm_actual : model->getParameters()) {
+      if(pm_actual->getId() == actual_symbol){
+        x[getStateIndexForVariable(pm_actual->getId())] = actual_value;
       }
     }
   }
@@ -232,6 +254,13 @@ void SBMLSystem::handleRateRule(const state &x, state &dxdt, double t) {
         } else {
           dxdt[index] = value;
         }
+
+        if (specieses[i].hasConversionFactorOrNot()) {
+          dxdt[index] *= specieses[i].getConversionFactor();
+        } else if (model->hasConversionFactorOrNot()) {
+          dxdt[index] *= model->getConversionFactor();
+        }
+
         continueImmediately = true;
         break;
       }
@@ -315,6 +344,30 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
     case AST_REAL_E:
     case AST_CONSTANT_E:
       return node->getValue();
+    case AST_FUNCTION_ARCCOT:
+      return atan(1 / evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCCSC:
+      return atan(1 / sqrt( (evaluateASTNodeLambda(node->getLeftChild())-1) * (evaluateASTNodeLambda(node->getLeftChild())+1) ));
+    case AST_FUNCTION_ARCSEC:
+      return atan( sqrt( (evaluateASTNodeLambda(node->getLeftChild())-1) * (evaluateASTNodeLambda(node->getLeftChild())+1) ) );
+    case AST_FUNCTION_ARCSINH:
+      return asinh(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCCOSH:
+      return acosh(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCTANH:
+      return atanh(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCSECH:
+      return log( (1 + (sqrt(1 - (pow(evaluateASTNodeLambda(node->getLeftChild()) , 2))))) / evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCCOTH:
+      return ((1.0/2.0) * (log( ((evaluateASTNodeLambda(node->getLeftChild())) + 1) / ((evaluateASTNodeLambda(node->getLeftChild())) -1) )));
+    case AST_FUNCTION_ARCCSCH:
+      return log( (1 + sqrt(1 + pow(evaluateASTNodeLambda(node->getLeftChild()), 2)))  / evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_COSH:
+      return cosh(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_COT:
+      return 1/tan(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_CSC:
+      return 1/sin(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_EXP:
       return MathUtil::exp(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_ABS:
@@ -327,6 +380,28 @@ double SBMLSystem::evaluateASTNode(const ASTNode *node, const state& x, double t
       return MathUtil::floor(evaluateASTNodeLambda(node->getLeftChild()));
     case AST_FUNCTION_PIECEWISE:
       return evaluatePiecewiseNode(node, x, t);
+    case AST_FUNCTION_SEC:
+      return 1/cos(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_SINH:
+      return sinh(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCCOS:
+      return acos(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCSIN:
+      return asin(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_SIN:
+      return sin(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ARCTAN:
+      return atan(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_COS:
+      return cos(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_LN:
+      return log(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_LOG:
+      return log10(evaluateASTNodeLambda(node->getRightChild()));
+    case AST_FUNCTION_TAN:
+      return tan(evaluateASTNodeLambda(node->getLeftChild()));
+    case AST_FUNCTION_ROOT:
+      return sqrt(evaluateASTNodeLambda(node->getRightChild()));
     default:
       std::cout << "type = " << type << std::endl;
       break;
@@ -381,13 +456,23 @@ double SBMLSystem::evaluateNameNode(const ASTNode *node, const state &x, double 
 }
 
 double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x, double t) {
+  // I let this for the moment :
   const ASTNode *left = node->getLeftChild();
   long long leftValue;
   ASTNodeType_t leftType = left->getType();
+  int res = left->getInteger();
+  
   switch (leftType) {
+    case AST_INTEGER:
+      for (int i = (res-1) ; i > 0 ; i--) {
+        res *= i;
+      }
+      return res;
+
     case AST_FUNCTION_CEILING:
       leftValue = MathUtil::ceil(evaluateASTNode(left->getLeftChild(), x, t));
       return MathUtil::factorial(leftValue);
+
     default:
       break;
   }
@@ -396,6 +481,7 @@ double SBMLSystem::evaluateFactorialNode(const ASTNode *node, const state &x, do
   std::cout << "left node type = " << leftType << std::endl;
   RuntimeExceptionUtil::throwUnknownNodeTypeException(leftType);
   return 0.0;
+
 }
 
 double SBMLSystem::evaluatePiecewiseNode(const ASTNode *node, const state &x, double t) {
@@ -431,6 +517,14 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x, do
       return true;
     case AST_CONSTANT_FALSE:
       return false;
+    case AST_RELATIONAL_EQ:
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
+      return left == right;
+    case AST_RELATIONAL_NEQ:
+      left = evaluateASTNodeLambda(node->getLeftChild());
+      right = evaluateASTNodeLambda(node->getRightChild());
+      return left != right;
     case AST_RELATIONAL_LT:
       left = evaluateASTNodeLambda(node->getLeftChild());
       right = evaluateASTNodeLambda(node->getRightChild());
@@ -451,6 +545,13 @@ bool SBMLSystem::evaluateConditionalNode(const ASTNode *node, const state &x, do
       leftCondition = evaluateConditionalNodeLambda(node->getLeftChild());
       if (!leftCondition) {
         return false;
+      }
+      rightCondition = evaluateConditionalNodeLambda(node->getRightChild());
+      return rightCondition;
+    case AST_LOGICAL_NOT:
+      leftCondition = evaluateConditionalNodeLambda(node->getLeftChild());
+      if (!leftCondition) {
+        return true;
       }
       rightCondition = evaluateConditionalNodeLambda(node->getRightChild());
       return rightCondition;

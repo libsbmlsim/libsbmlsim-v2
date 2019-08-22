@@ -15,6 +15,7 @@ ReactionWrapper::ReactionWrapper(const Reaction *reaction) {
   auto node = reaction->getKineticLaw()->getMath();
   auto model = reaction->getModel();
 
+  // Ici
   auto fdRewritedNode = ASTNodeUtil::rewriteFunctionDefinition(node, model->getListOfFunctionDefinitions());
   this->math = ASTNodeUtil::rewriteLocalParameters(fdRewritedNode, reaction->getKineticLaw()->getListOfParameters());
   delete fdRewritedNode;

@@ -1,4 +1,5 @@
 #include "sbmlsim/internal/wrapper/ParameterWrapper.h"
+#include "sbmlsim/internal/util/ASTNodeUtil.h"
 
 ParameterWrapper::ParameterWrapper(const Parameter *parameter)
     : id(parameter->getId()), value(parameter->getValue()) {

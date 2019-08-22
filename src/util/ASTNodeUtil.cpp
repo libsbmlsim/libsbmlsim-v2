@@ -33,6 +33,7 @@ ASTNode *ASTNodeUtil::rewriteFunctionDefinition(const ASTNode *node,
   return ret;
 }
 
+// Et ici du coup
 ASTNode *ASTNodeUtil::rewriteLocalParameters(const ASTNode *node, const ListOfParameters *localParameters) {
   ASTNode *ret;
 
@@ -55,6 +56,33 @@ ASTNode *ASTNodeUtil::rewriteLocalParameters(const ASTNode *node, const ListOfPa
   // replace children's local parameter node recursively
   for (auto i = 0; i < ret->getNumChildren(); i++) {
     auto newChild = rewriteLocalParameters(ret->getChild(i), localParameters);
+    ret->replaceChild(i, newChild, DELETE_REPLACED_NODE);
+  }
+
+  return ret;
+}
+
+ASTNode *ASTNodeUtil::rewriteFamousConstants(const ASTNode *node) {
+  ASTNode *ret;
+
+  if (node->getType() == AST_NAME_AVOGADRO) {
+    ret = new ASTNode(AST_REAL_E);
+    ret->setValue(6.02214179e23);
+    return ret;
+  }
+
+  if (node->getType() == AST_CONSTANT_PI) {
+    ret = new ASTNode(AST_REAL);
+    ret->setValue(M_PI);
+    return ret;
+  }
+
+  // if the node isn't one of them
+  ret = node->deepCopy();
+
+  // replace children's local parameter node recursively
+  for (auto i = 0; i < ret->getNumChildren(); i++) {
+    auto newChild = rewriteFamousConstants(ret->getChild(i));
     ret->replaceChild(i, newChild, DELETE_REPLACED_NODE);
   }
 

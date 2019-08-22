@@ -3,6 +3,7 @@
 
 SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReference *speciesReference) {
   this->speciesId = speciesReference->getSpecies();
+
   if (speciesReference->isSetStoichiometryMath()) {
     this->stoichiometryMath = ASTNodeUtil::rewriteFunctionDefinition(
         speciesReference->getStoichiometryMath()->getMath(),
@@ -17,6 +18,14 @@ SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReference *species
     this->stoichiometryType = StoichiometryType::VALUE;
     this->stoichiometryMath = NULL;
   }
+
+  if (speciesReference->getModel()->getSpecies(this->getSpeciesId())->isSetConversionFactor()) {
+    this->hasConversionFactor = true;
+    // Error here line 25 : 99% sure that it makes IntegationTest run forever
+    this->conversionFactor = speciesReference->getModel()->getParameter(speciesReference->getModel()->getSpecies(this->getSpeciesId())->getConversionFactor())->getValue();
+  } else {
+    this->hasConversionFactor = false;
+  }
 }
 
 SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReferenceWrapper &speciesReference) {
@@ -28,6 +37,8 @@ SpeciesReferenceWrapper::SpeciesReferenceWrapper(const SpeciesReferenceWrapper &
     this->stoichiometryMath = NULL;
   }
   this->stoichiometryType = speciesReference.stoichiometryType;
+  this->conversionFactor = speciesReference.conversionFactor;
+  this->hasConversionFactor = speciesReference.hasConversionFactor;
 }
 
 SpeciesReferenceWrapper::~SpeciesReferenceWrapper() {
@@ -54,4 +65,12 @@ const StoichiometryType &SpeciesReferenceWrapper::getStoichiometryType() const {
 
 bool SpeciesReferenceWrapper::hasStoichiometryMath() const {
   return this->stoichiometryType == StoichiometryType::MATH;
+}
+
+double SpeciesReferenceWrapper::getConversionFactor() const {
+  return this->conversionFactor;
+}
+
+bool SpeciesReferenceWrapper::hasConversionFactorOrNot() const {
+  return this->hasConversionFactor;
 }

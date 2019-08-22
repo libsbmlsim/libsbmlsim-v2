@@ -27,6 +27,9 @@ size_t integrate_const_detail(
 
   while (odeint::detail::less_eq_with_sign(time + time_step, end_time, dt)) {
     // TODO create dependency graph for assignmentRules and initialAssignments
+
+    // Old code
+    /*
     // assignment rules
     system.handleAssignmentRule(start_state, time);
 
@@ -35,9 +38,21 @@ size_t integrate_const_detail(
 
     // assignment rules
     system.handleAssignmentRule(start_state, time);
+    */
 
     // observer
     obs(start_state, time);
+
+    if (time <= 0)  // Because according to the specifications it can sometimes go under 0 
+    {
+      system.handleInitialAssignment(start_state, time);
+      system.handleAssignmentRule(start_state, time);
+    }
+    
+    if (time > 0)
+    {
+      system.handleAssignmentRule(start_state, time);
+    }
 
     st.do_step(system, start_state, time, dt);
 
@@ -73,6 +88,7 @@ size_t integrate_const_detail(
 
   while (odeint::detail::less_eq_with_sign(time + time_step, end_time, dt)) {
     // TODO create dependency graph for assignmentRules and initialAssignments
+    /*
     // assignment rules
     system.handleAssignmentRule(start_state, time);
 
@@ -81,9 +97,21 @@ size_t integrate_const_detail(
 
     // assignment rules
     system.handleAssignmentRule(start_state, time);
+    */
 
     // observer
     obs(start_state, time);
+
+    if (time <= 0)  // Because according to the specifications it can sometimes go under 0 
+    {
+      system.handleInitialAssignment(start_state, time);
+      system.handleAssignmentRule(start_state, time);
+    }
+    
+    if (time > 0)
+    {
+      system.handleAssignmentRule(start_state, time);
+    }
 
     // integrate_adaptive_checked uses the given checker to throw if an overflow occurs
     real_steps += odeint::detail::integrate_adaptive(stepper, system, start_state, time,
